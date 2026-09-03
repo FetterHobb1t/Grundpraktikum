@@ -1,1 +1,0 @@
-print("Merz Leck Eier") # Jawollo
