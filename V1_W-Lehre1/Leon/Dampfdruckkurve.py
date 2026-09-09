@@ -7,7 +7,7 @@ from praktikum.cassy import CassyDaten
 from praktikum import analyse
 from praktikum import literaturwerte as lw
 
-LABX_DATEI = "Dampfkurve.labx"
+LABX_DATEI = 'V1_W-Lehre1\Leon\Dampfkurve.labx'
 OUTPUT_DIR = Path("auswertung_plots")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -74,14 +74,14 @@ print(f"\n{len(t)} Messpunkte, t = {t[0]:.0f} .. {t[-1]:.0f} s")
 # ----------------------------------------------------------------------
 
 def markiere_segmente(ax):
-    for name, (i0, i1) in [
-        ("Rauschen 1", SEGMENT_RAUSCHEN_1),
-        ("Dichtigkeit 1", SEGMENT_DICHTIGKEIT_1),
-        ("Heizen/Sieden", SEGMENT_HEIZEN),
-        ("Abkuehlen (Hauptmessung)", SEGMENT_ABKUEHLEN),
-        ("Rauschen/Dichtigkeit 2", SEGMENT_RAUSCHEN_2),
+    for name, (i0, i1), color in [
+        ("Rauschen 1", SEGMENT_RAUSCHEN_1, 'green'),
+        ("Dichtigkeit 1", SEGMENT_DICHTIGKEIT_1, 'blue'),
+        ("Heizen/Sieden", SEGMENT_HEIZEN, 'orange'),
+        ("Abkuehlen (Hauptmessung)", SEGMENT_ABKUEHLEN, 'red'),
+        ("Rauschen/Dichtigkeit 2", SEGMENT_RAUSCHEN_2, 'purple'),
     ]:
-        ax.axvspan(t[i0], t[min(i1, len(t) - 1)], alpha=0.15, label=name)
+        ax.axvspan(t[i0], t[min(i1, len(t) - 1)], alpha=0.15, label=name, color=color)
 
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
