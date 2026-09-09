@@ -1,0 +1,1 @@
+cassy_info Beispiele/lab/Pendel.lab
