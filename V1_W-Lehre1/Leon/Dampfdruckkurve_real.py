@@ -32,7 +32,7 @@ t = messung.datenreihe('t').werte
 p = messung.datenreihe('p_A1').werte
 T = messung.datenreihe('&J_B11').werte
 print(f"\n{len(t)} Messpunkte,t = {t[0]:.0f}.. {t[-1]:.0f} s")
-
+#2)Übersichtsplot der Gesamtmessung
 def bereiche(ax):
     for name,(start, ende), color in[
         ("Rauschen Vorher",rauschen_1,'green'),
@@ -56,3 +56,23 @@ bereiche(ax2)
 fig.tight_layout()
 fig.savefig(OUTPUT / "Übersicht_Messung.png",dpi=150)
 print(f"Übersicht der Messung gespeichert in {OUTPUT / 'Übersicht_Messung.png'}")
+#3)Rauschmessung von Temperatur und Druck
+def rauschmessung(werte, name, einheit,dateiname):
+    mittel, sigma =analyse.mittelwert_stdabw(werte)
+    fig, ax = plt.subplots(figsize=(6,4))
+    ax.hist(werte, bins=12, color="green", alpha=0.75, edgecolor="purple")
+    ax.axvline(mittel, color="tab:red",ls='--', label=f'Mittelwert = {mittel:.4f} {einheit}')
+    ax.set_xlabel(f'{name} [{einheit}]')
+    ax.set_ylabel("Häufigkeit")
+    ax.set_title(f'Rauschmessung {name}\$\sigma$ = {sigma:.4f} {einheit} (n={len(werte)})')
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(OUTPUT / dateiname, dpi=150)
+    plt.close(fig)
+    print(f"{name}:Mittelwert = {mittel:.4f} {einheit}, Standardabweichung = {sigma:.4f} {einheit}")
+    return mittel, sigma
+start, ende = rauschen_1
+print("Rauschmessung Vor dem Versuch")
+_, sigma_p_1 = rauschmessung(p[start:ende], "Druck", "hPa", "Rauschmessung_Druck-vorher.png")
+_, sigma_T_1 = rauschmessung(T[start:ende], "Temperatur", "°C", "Rauschmessung_Temperatur-vorher.png")
+print(f"\n verwendete Standardabweichungen: sigma_p = {sigma_p_1:.4f} hPa, sigma_T = {sigma_T_1:.4f} °C")
