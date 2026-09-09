@@ -60,7 +60,7 @@ print(f"Übersicht der Messung gespeichert in {OUTPUT / 'Übersicht_Messung.png'
 def rauschmessung(werte, name, einheit,dateiname):
     mittel, sigma =analyse.mittelwert_stdabw(werte)
     fig, ax = plt.subplots(figsize=(6,4))
-    ax.hist(werte, bins=12, color="green", alpha=0.75, edgecolor="purple")
+    ax.hist(werte, bins=12, color="tab:blue", alpha=0.75, edgecolor="black")
     ax.axvline(mittel, color="tab:red",ls='--', label=f'Mittelwert = {mittel:.4f} {einheit}')
     ax.set_xlabel(f'{name} [{einheit}]')
     ax.set_ylabel("Häufigkeit")
