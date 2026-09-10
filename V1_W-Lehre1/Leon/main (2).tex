@@ -1,0 +1,217 @@
+\documentclass[twoside]{protokoll}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{placeins}
+
+\sisetup{locale = DE, seperate-uncertainty = true}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+\versuchsname{Dampfdruckkurve}
+
+\teilnehmer{Leon Ehrhard, 466488}
+
+\gruppe{B1}
+
+\begin{document}
+\maketitle
+
+
+\begin{aufgabe}{Vormessungen}
+  Zeigen Sie Histogramme zu den Rauschmessungen mit den verwendeten
+  Sensoren und bestimmen Sie die statistischen
+  Messunsicherheiten. Geben Sie die Ergebnisse Ihrer
+  Dichtigkeitsmessungen an.
+\end{aufgabe}
+
+\subsection{Lösung}
+Vor dem Hauptversuch wurde eine Rauschmessung von Druck- und Temperatursensor bei konstanten Umgebungsbedingungen durchgeführt, um die statistische Messunsicherheit der Sensoren zu bestimmen. Unter der Annahme, dass die Einzelmessungen normalverteilt um den wahren Wert streuen, ist die statistische Unsicherheit einer Einzelmessung die Stichproben-Standardabweichung
+\FloatBarrier
+\begin{equation}
+    \sigma = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2}\,.
+    \label{eq:stdabw}
+\end{equation}
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Rauschmessung_Druck-vorher.png}
+    \caption{Rauschmessung von Druck vor dem Hauptversuch, mit Mittelwert und Standardabweichung.}
+    \label{fig:rauschen1}
+\end{figure}
+\FloatBarrier
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Rauschmessung_Temperatur-vorher.png}
+    \caption{Rauschmessung der Temperatur vor dem Hauptversuch, mit Mittelwert und Standardabweichung.}
+    \label{fig:rauschen1}
+\end{figure}
+\FloatBarrier
+Als statistischen Unsicherheit der Rauschmessung folgen dann für Temperatur und Druck folgende Werte: $\sigma_p = \SI{0.4596}{\hecto\pascal}$, $\sigma_T = \SI{0.0394}{\celsius}$.
+\begin{table}[htb]
+    \centering
+    \begin{tabular}{lcc}
+         &  Druck $p$/\si{\hecto\pascal}& Temperatur $T$/\si{\celsius} \\
+         \midrule
+         Rauschmessung & $987,4000 \pm 0,4596$ & $23,6328 \pm 0,0394$ \\
+         \bottomrule
+    \end{tabular}
+    \caption{Ergebnis der Rauschmessung}
+    \label{tab:rauschen}
+\end{table}
+
+\paragraph{Digitalisierungsfehler}
+Da der Drucksenser nur Werte in Schritten von $\Delta p = \SI{0.75}{\hecto\pascal}$ anzeigen kann und unter der Annahme einer Recheckverteilung des wahren Werts innerhalb einer Anzeigestufe, ergibt sich der Digitalisierungsfehler zu:
+\begin{equation}
+    \sigma_{\text{Digit}} = \frac{\Delta p}{\sqrt{12}} = \SI{0.2165}{\hecto\pascal} \,.
+    \label{eq:digit}
+\end{equation}
+Da $\sigma_{\text{Digit}} < \sigma_p$ (aus der Rauschmessung) ist, ist der Digitalisierungsfehler schon mit in der Rauschunsicherheit enthalten und muss nicht zusätlich addiert werden.
+\paragraph{Dichtigkeitsmessung}
+Vor und nach dem Hauptversuch wurde bei geschlossenem Ventil (evakuierter Aufbau) der zeitliche Druckanstieg gemessen und linear angepasst $p(t) = p_0 + \dot{p}\, t$. Die Steigung $\dot p$ ist die Leckrate:
+\begin{table}[htb]
+    \centering
+    \begin{tabular}{lc}
+         \toprule
+         & Leckrate/\si{\hecto\pascal\per\minute}\\
+         \midrule
+         Vor dem Hauptversuch &  $0,092 \pm 0,006$\\
+         Nach dem Hauptversuch & $-0,188 \pm 0,069$\\
+         \bottomrule
+    \end{tabular}
+    \caption{Ergebnisse der Dichtigkeitsmessung}
+    \label{tab:dichtigkeit}
+\end{table}
+
+Da beide Leckraten betragsmäßig klein sind (\SI{<0,2}{\hecto\pascal\per\minute}), der Aufbau also über die gesamte Versuchsdauer hinweg hinreichend dicht war, zeigt ,dass die Werte aus dem Hauptversuch nicht sonderlich durch die Leckrate abweichen können.
+
+\begin{aufgabe}{Rohdaten}
+  Plotten Sie die aufgezeichneten Verläufe von Druck und Temperatur
+  gegen die Zeit. Diese Darstellung soll die Dichtigkeitsmessungen am
+  Anfang und Ende, das Aufheizen, das Abpumpen während der
+  Aufwärmphase, das Kochen des Wassers, das Schließen des Ventils und
+  den Verlauf der Abkühlphase zeigen. Beschreiben Sie Ihren
+  Plot. Tragen Sie die Dampfdruckkurve $p(T)$ auf und zeichnen Sie
+  Literaturwerte zum Vergleich ein.
+\end{aufgabe}
+\subsection{Lösung}
+Die Abbildung ~\ref{fig:gesamtansicht} zeigt den vollständigen Verlauf von Druck und Temperatur über die gesamte, durchgehend aufgezeichnete Messreihe.
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=1\linewidth]{Übersicht_Messung.png}
+    \caption{Vollständiger Verlauf von Druck $p(t)$} (oben) und Temperatur $T(t)$ (unten). Farbig markiert sind die Unterschiedlichen Teilmessung der Aufgabe.}
+    \label{fig:gesamtansicht}
+\end{figure}
+\FloatBarrier
+\textbf{Beschreibung:} Zu Beginn der Messung wird bei Umgebungsbedingungen ($p\approx\SI{987}{\hecto\pascal}$, $T\approx\SI{23.6}{\celsius}$) eine Rauschmessung durchgeführ. Anschließend wird in dem Kolben mit einer Handpumpe ein Unterduck erzeugt und der Absperrhahn zugedreht, so dass ein konstanter Druck von $p=\SI{157}{\hecto\pascal}$ eingestellt ist. Nun wird über 10 Minuten der Druck gemessen, nur wenn die Änderungsrate des Drucks $<\SI{0.2}{\hecto\pascal\per\minute}$ liegt, ist unser Aufbau Dicht und die Leckrate zu vernachlässigen. Danach wird das Ventil wieder geöffnet und der Umgebungsdruck im Kolben wiederhergestellt, bevor die Heizhaube eingeschaltet wird und das Wasser zum sieden gebracht wird, bei geöffnetem Ventil. Die beiden kurzen,scharfen Druckeinbruche während der Aufheizungsphase demonstrieren die Starke Druckabhängigkeit der Siedetemperatur denn bei $T=\SI{65,5}{\celsius}$ und $p=\SI{275}{\hecto\pascal}$ und auch bei $T=\SI{87}{\celsius}$ und $p=\SI{647}{\hecto\pascal}$ hat das Wasser schon angefangen zu sieden. Nach ausreichender Ausgaszeit, um so gut es geht den gesamten Restsauerstoff anteil aus dem Kolben zu kriegen, wurde zeitgleich das Ventil geschlossen und die Heizhaube ausgeschaftet. In der anschließenden Abkühlphase fallen $p$ und $T$ gemainsam kontinuierlich ab. Ab hier beginnt nun die Hauptmessung zur BEstimmung der Dampfdruckkurve. Am Ende der Messung ändern sich $p$ und $T$ fast garnicht mehr, diese Daten kann man nun für eine zweite Rausch- und/oder Dichtigkeitsmessung benutzen.
+
+Aus den Daten der Hauptmesszeit von $t=\SI{3200}{s}$ bis $t=\SI{9450}{s}$ kann man nun die Dampfdruckkurve $p(T)$ bestimmen, diese sieht wie folgt aus:
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=1\linewidth]{Dampfdruckkurve_Hauptmessung.png}
+    \caption{Dampfdruckkurve $p(T)$ aus der Abkühlphase(blaue Punkt) im Vergleich mit dem Literaturverlauf für Wasser(schwarze Linie) aus den NIST-Daten.}
+    \label{fig:pT}
+\end{figure}
+\FloatBarrier
+Die Eigene Messung stimmt über den gesamten Aufgezeichneten Bereich ($\approx\SI{26}{\celsius}$ bis $\SI{99}{\celsius}$) sehr gut mit den Literatur werten überein.
+
+Die Abbildung ~\ref{fig:hauptmessung} zeigt den Verlauf von Druck$p$ und Temperatur T nochmal einzeln gegen die Zeit, aus denen dann die Dampfdruckkurve erstellt wird.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Hauptmessung_zeitverlauf.png}
+    \caption{Druck gegen Zeit (oben) und Temperatur gegen Zeit(unten)}
+    \label{fig:hauptmessung}
+\end{figure}
+\FloatBarrier
+
+\begin{aufgabe}{Bestimmung der molaren Verdampfungsenthalpie des
+    Wassers}
+  Transformieren Sie Ihre Rohdaten in Hinblick auf die
+  Clausius-Clapeyron-Gleichung. Berechnen Sie die Messunsicherheiten
+  auf die transformierten Größen. Tragen Sie Ihre transformierten
+  Daten für einen geeigneten eingeschränkten Temperaturbereich auf,
+  sodass sich (näherungsweise) ein linearer Zusammenhang
+  ergibt. Führen Sie dann in diesem Temperaturbereich eine lineare
+  Regression durch, um die molare Verdampfungsenthalpie des Wassers
+  und ihre Messunsicherheit zu bestimmen. Zeichnen Sie Ihre
+  Anpassungskurve ein und erstellen Sie den Residuenplot. Bestimmen
+  Sie die systematische Unsicherheit der molaren
+  Verdampfungsenthalpie. Vergleichen Sie Ihr Endergebnis mit dem
+  Literaturwert.
+\end{aufgabe}
+\subsection{Lösung}
+Damit wir von untererer Dampfdruckkurve $p(T)$ ~\ref{fig:pT} jetzt auf unsere Molare Verdampfungsenthalpie des Wassers kommen müssen wir eine Transformation der Rohdaten mit Hilfe der Clausius-Clapeyron-Gleichung machen. Die Integrierte Chlausis Clapeyron-Gleichung unter der Näherung $\Lambda = \text{const.}$ lautet:
+\begin{equation}
+    \ln p=-\frac{\Lambda}{R}\cdot\frac{1}{T}+\text{const.}
+    \label{eq:cctransform}
+\end{equation}
+mit der molaren Gaskonstanten $R=\SI{8.314}{\joule\per\mole\per\kelvin}$, welche aus dem idealen Gasgesetz stammt. Ein Auftrag von $y=\ln(p)$ gegen $x=1/T$ liefert also eine gerade mit der Steigung $a=-\Lambda/R$. Um auch eine Messunsicherheit auf diese Größe zu erhalten, können wir einfach die Messunsicherheiten der transformierten größen nehmen, diese folgen aus der Gaußen Fehlerfortpflanzung:
+\begin{equation}
+    \sigma_y= \frac{\sigma_p}{p}\,,\\
+    \sigma_x=\frac{\sigma_T}{T^2}\,.
+    \label{eq:ffp}
+\end{equation}
+Da der Drucksensor deutlich Präziser ist als es für eine sichtbare Auswertung für $\sigma_x$ nötig wäre, dominiert der Fehler auf $\sigma_y$ die Anpassung der Messwerte.
+Um einen ungefähren linearen Bereich zu erhalten wird die Anpassung auf $T\in[\SI{30}{\celsius},\SI{98.9}{\celsius}]$ eingeschränkt dies sind dann $n=4238$ Messpunkte.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=1\linewidth]{Dampfdruckkurve_Clausius-Clapeyron.png}
+    \caption{Transformierte Messdaten $\ln(p)$ gegen $1/T$ mit gewichteter Regression und Messunsicherheiten, an jedem 25 Messwert zu besseren Übersicht}
+    \label{fig:fitcct}
+\end{figure}
+\FloatBarrier
+Die gewichtete Lineare Regression liefert folgende Daten:
+\begin{align}
+    a &=-5088,1747\pm 0,2200\si{\kelvin}\, \\
+    b &=20,5826\pm 0,0006\,\\
+    \text{Korrelation}(a,b) &= -0,999\, \\
+    \chi^2/\text{dof} &= 8.86 \quad (\text{dof}=4236)\,.
+\end{align}
+Daraus ergibt sich dann eine molare Verdampfungsenthalpie von:
+\begin{equation}
+    \Lambda = -a\cdotR = (42,305 \pm 0,002_{\text{stat}})\;\si{\kilo\joule\per\mole}\, .
+\end{equation}
+Der rein statistische Fehler ist wegen der großen Anzahl an Messpunkten und der hohen Sensorpräzision verschwindend klein.
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=1\linewidth]{Residuenplot.png}
+    \caption{Residuen der linearen Regression, mit ihren Fehlern in Rot}
+    \label{fig:resuiden}
+\end{figure}
+\FloatBarrier
+Der $\chi^2$-Wert von $8,86$ liegt deutlich über dem für eine konsistente Anpassung Erwarteten Wert von $\approx 1$ . Wenn man die ersten 400 Werte beim Berechnen der molaren Verdampfungsenthalpie weglässt, fällt der $\chi^2$-Wert auf $\approx 2$, daraus lässt sich vermuten das zu beginn der Messung noch Luft im System gewesen sein muss und unsere Werte erst später einer Konsistenten Anpassung entsprechen. Desweitern sieht der Verlauf der Residuen sehr Periodisch aus, dies könnte mit der Endlichen Auflösung des Druckmessgerätes zu tun haben, da der Drucksensor in diskreten Stufen von \SI{0.75}{\hecto\pascal} aufnimmt. Die Temperatur kann sich aber kontinuierlich verändern. Dadurch entsteht ein periodisches Muster in den Residuen. Desweitern ist die molare Verdampfungsenthalpie selbst von der Temperatur abhängig, dass heißt sie nimmt keinen Konstanten Wert an über alle Temperaturen sondern schwankt zwischen $\SI{43.8}{\kilo\joule\per\mole}$ bei \SI{30}{\celsius} und $\SI{40.9}{\kilo\joule\per\mole}$ bei \SI{95}{\celsius} wodurch $\ln p(1/T)$ auf dem Bereich leicht gekrümmt und nicht exakt linear ist. Bei einer Einschränkung auf höhere Temperaturen verschlechtert sich mein $\chi^2/\text{dof}$ noch weiter. Bei ausschließlich niedrigeren Temperaturen hingegen verbessert es sich, wie zu sehen, wenn man die ersten 400 Messwerte der Hauptmessung weglässt.
+Es könnte damit zusammenhängen das gerade im Bereich von großen Druckwerten und hohen Temperaturen die $\sigma$-Werte sehr klein sind und somit Anpassung empfindlicher auf systematische Abweichungen reagiert.
+Um nun die Systematischen Unsicherheiten noch mit ins Ergebnis zu nehmen, nimmt man die Kalibrierunsicherheiten der Sensoren:
+($\sigma_{p, \text{kalib}}=\SI{3}{\hecto\pascal}$,
+$\sigma_{T, \text{kalibg}}=\SI{0.4}{\celsius}$ im Bereich \SIrange{70}{120}{\celsius} und $\sigma_{T, \text{kalibk}}=\SI{0.2}{\celsius}$ im Bereich \SIrange{-20}{70}{\celsius}, diese wurden mittels Verschiebemethode errechnet:
+Die Rohdaten wurden jeweils um $\pm\sigma_{\text{kalib}}$ verschoben, und die halbe Differenz der resultierenden $\Lambda$-Werte als Fehleranteil genutzt.
+
+\begin{table}[htb]
+  \centering
+  \caption{Beiträge zur systematischen Unsicherheit auf $\Lambda$.}
+  \begin{tabular}{lc}
+    \toprule
+    Quelle & $\Delta\Lambda$ / \si{\kilo\joule\per\mole} \\
+    \midrule
+    Druck-Kalibrierung ($\pm\SI{3}{\hecto\pascal}$) & $0{,}524$ \\
+    Temperatur-Kalibrierung ($\si{\celsius}$) & $0{,}099$ \\
+    \midrule
+    gesamt (quadratisch addiert) & $0{,}534$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+Für das Endergebnis ergibt sich dann folgende Gleichung
+\begin{equation}
+    \Lambda = (42,305 \pm 0,534)\;\si{\kilo\joule\per\mole}
+    \qquad (\sigma_{\text{stat}} \ll \sigma_{\text{sys}})
+\end{equation}
+Dadurch das $\sigma_{\text{sys}}$ so klein ist, fällt der durch die Quadratische Addition erst ab der fünften Nachkommastelle auf.
+Der Literaturwert bei der Mittleren Fit-Temperatur von \SI{48.4}{\celsius} beträgt $\Lambda_{\text{Lit}} = \SI{42.979}{\kilo\joule\per\mole}$ . Die Abweichung beträgt:
+\begin{equation}
+    |\Lambda-\Lambda_{\text{Lit}}| = \SI{0.674}{\kilo\joule\per\mole}
+    \;\widehat{=};1,25\,\sigma\, ,
+\end{equation}
+Das Gesamtergebnis meiner molaren Verdampfungsenthalpie liegt also innerhalb 1,25 $\sigma$ des Literaturwertes.
+\end{document}
