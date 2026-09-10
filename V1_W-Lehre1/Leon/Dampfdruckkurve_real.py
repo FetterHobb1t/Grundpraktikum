@@ -64,7 +64,7 @@ def rauschmessung(werte, name, einheit,dateiname):
     ax.axvline(mittel, color="tab:red",ls='--', label=f'Mittelwert = {mittel:.4f} {einheit}')
     ax.set_xlabel(f'{name} [{einheit}]')
     ax.set_ylabel("Häufigkeit")
-    ax.set_title(f'Rauschmessung {name}\$\sigma$ = {sigma:.4f} {einheit} (n={len(werte)})')
+    ax.set_title(f'Rauschmessung {name}$\sigma$ = {sigma:.4f} {einheit} (n={len(werte)})')
     ax.legend()
     fig.tight_layout()
     fig.savefig(OUTPUT / dateiname, dpi=150)
@@ -183,3 +183,12 @@ dLambdas_sys = np.sqrt(dLambda_p**2+dLambda_T**2)
 dLambda_stat = abs(ea*R_Gas)
 dLambda_ges = np.sqrt(dLambdas_sys**2+dLambda_stat**2)
 print(f"Gesamtfehler auf Lambda: dLambda_ges = {dLambda_ges:.2f} J/mol (statistisch: {dLambda_stat:.2f}, systematisch: {dLambdas_sys:.2f})")
+print(f"Lambda_sys = {dLambda_p:.2f} (Druck) + {dLambda_T:.2f} (Temperatur) = {dLambdas_sys:.2f} J/mol")
+T_mittel = np.mean(T_fit_K)- 273.15
+Lambda_mittel_LIT = lw.verdampfungsenthalpie_wasser(T_mittel)*1000
+
+print(f"Lambda = {lambda_0/1000:.3f} kJ/mol")
+print(f"statistisch +- {dLambda_stat/1000:.3f} kJ/mol")
+print(f"systematisch +- {dLambdas_sys/1000:.3f} kJ/mol")
+print(f"Gesamtfehler +- {dLambda_ges/1000:.3f} kJ/mol")
+print(f"Litwert: {Lambda_mittel_LIT/1000:.3f} kJ/mol bei T_mittel = {T_mittel:.1f} °C")
