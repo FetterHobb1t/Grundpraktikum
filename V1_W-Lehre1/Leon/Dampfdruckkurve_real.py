@@ -56,6 +56,8 @@ bereiche(ax2)
 fig.tight_layout()
 fig.savefig(OUTPUT / "Übersicht_Messung.png",dpi=150)
 print(f"Übersicht der Messung gespeichert in {OUTPUT / 'Übersicht_Messung.png'}")
+
+
 #3)Rauschmessung von Temperatur und Druck
 def rauschmessung(werte, name, einheit,dateiname):
     mittel, sigma =analyse.mittelwert_stdabw(werte)
@@ -76,6 +78,8 @@ print("Rauschmessung Vor dem Versuch")
 _, sigma_p_1 = rauschmessung(p[start:ende], "Druck", "hPa", "Rauschmessung_Druck-vorher.png")
 _, sigma_T_1 = rauschmessung(T[start:ende], "Temperatur", "°C", "Rauschmessung_Temperatur-vorher.png")
 print(f"\n verwendete Standardabweichungen: sigma_p = {sigma_p_1:.4f} hPa, sigma_T = {sigma_T_1:.4f} °C")
+
+
 #4)Dichtigkeitsmessung der Apperatur
 def leckrate(t_seg, p_seg, sigma_p, name, dateiname):
     ey = np.full_like(p_seg, sigma_p)
@@ -98,6 +102,8 @@ start, ende = dichtigkeit_1
 leckrate(t[start:ende], p[start:ende],sigma_p_1, "Vor dem Versuch", "Dichtigkeitsmessung-vorher.png")
 start, ende = rauschen_2
 leckrate(t[start:ende], p[start:ende],sigma_p_1, "Nach dem Versuch", "Dichtigkeitsmessung-nachher.png")
+
+
 #5)p(t) und T(t) und p(T) während der Hauptmessung
 start, ende = abkühlen
 t_haupt = t[start:ende]
@@ -126,6 +132,7 @@ fig.tight_layout()
 fig.savefig(OUTPUT / "Dampfdruckkurve_Hauptmessung.png", dpi=150)
 plt.close(fig)
 print(f"Hauptmessung: {len(t_haupt)} Punkte, T={T_haupt.min():.1f}..{T_haupt.max():.1f} °C, p={p_haupt.min():.1f}..{p_haupt.max():.1f} hPa")
+
 #6)Transformation und fehler fortpflanzung mit Clausius-Clapeyron-Gleichung
 #ln(p) = -Lambda/R*1/T + const
 maske = (T_haupt >= T_min_C) & (T_haupt <= T_max_C)
@@ -166,6 +173,8 @@ ax.set_title(f"Residuenplot (chi^2/dof = {chiq_dof:.2f})")
 fig.tight_layout()
 fig.savefig(OUTPUT / "Residuenplot.png", dpi=300)
 plt.close(fig)
+
+
 #8) Unsicherheiten auf Verschiebe Methoden
 def lambda_steigung(a_steigung):
     return -a_steigung*R_Gas
