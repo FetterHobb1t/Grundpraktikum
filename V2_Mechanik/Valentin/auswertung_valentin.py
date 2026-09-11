@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from pathlib import Path
 from praktikum.cassy import CassyDaten
@@ -18,13 +19,34 @@ print(CassyDaten(DATEN_Messreihen).info())
 print(cassy_daten_rauschen.info())
 
 def auswertung_messreihe(DATEN, i, trim_vorne=0, trim_hinten=-1):
+
+    print(f'\nAuswertung {i}:')
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
     messung = CassyDaten(DATEN).messung(i)
     
     t = messung.datenreihe('t').werte[trim_vorne:trim_hinten]
     U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
+
+    def f(t, A, B, w):
+        return A * np.exp(-B * t) * np.cos(w * t)
     
-    plt.plot(t, U, ls='x', label=f'Messreihe {i}', color=colors[i-1], alpha=0.8)
+    popt, pcov = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi])
+
+    A_fit, B_fit, w_fit = popt
+    print(f'U_0 = {A_fit}')
+    print(f'delta = {B_fit}')
+    print(f'w = {w_fit}')
+    print(f'T = {2 * np.pi / w_fit:.4f}')
+
+    fig, ax = plt.subplots()
+    ax.plot(t, U, ls=':', label=f'Messreihe {i}', color=colors[i-1], alpha=0.8)
+    ax.plot(t, f(t, *popt), label='Fitdaten')
+    ax.set_xlabel('Zeit t [s]')
+    ax.set_ylabel('Spannung U [V]')
+    ax.set_title(f'Messreihe {i}, $U(t)={A_fit:.4f}\cdot e^(-{B_fit}\cdot t)\cdot cos(\omega\cdot t)$')
+    ax.legend()
+    fig.savefig(OUTPUT / f'MessungPlusFit{i}')
+    plt.close(fig)
     pass
 
 def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
@@ -50,13 +72,7 @@ def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     return mean, std
 
 mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', 10, -1)
-print(f'U = ({mittel}+-{sigma})V')
+print(f'U = ({mittel:.4f}+-{sigma:.4f})V')
 
-U = messung_rauschen.datenreihe('U_B1').werte[10:]
-
-
-plt.figure()
-# for i in range(1,11):
-#     auswertung_messreihe(DATEN_Messreihen, i)
-plt.legend()
-plt.show()
+for i in range(1, 11):
+    auswertung_messreihe(DATEN_Messreihen, i)
