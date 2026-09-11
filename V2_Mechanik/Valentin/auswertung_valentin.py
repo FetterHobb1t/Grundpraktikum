@@ -18,36 +18,38 @@ messung_rauschen     = cassy_daten_rauschen.messung(1)
 print(CassyDaten(DATEN_Messreihen).info())
 print(cassy_daten_rauschen.info())
 
-def auswertung_messreihe(DATEN, i, trim_vorne=0, trim_hinten=-1):
+def auswertung_messreihe(DATEN, i, trim_vorne=0, trim_hinten=-1, plot_intervall=[3000,4000]):
 
     print(f'\nAuswertung {i}:')
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
     messung = CassyDaten(DATEN).messung(i)
     
     t = messung.datenreihe('t').werte[trim_vorne:trim_hinten]
     U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
 
-    def f(t, A, B, w):
-        return A * np.exp(-B * t) * np.cos(w * t)
+    def f(t, A, B, w, phi, y_0):
+        return A * np.exp(-B * t) * np.cos(w * t + phi) + y_0
     
-    popt, pcov = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi])
+    popt, pcov = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi, 0, np.mean(U)])
 
-    A_fit, B_fit, w_fit = popt
-    print(f'U_0 = {A_fit}')
-    print(f'delta = {B_fit}')
-    print(f'w = {w_fit}')
+    A_fit, B_fit, w_fit, phi_fit, y_0_fit = popt
+
+    print(f'U_0 = {A_fit:.4f}')
+    print(f'delta = {B_fit:.4f}')
+    print(f'w = {w_fit:.4f}')
     print(f'T = {2 * np.pi / w_fit:.4f}')
+    print(f'phi = {phi_fit:.4f}')
+    print(f'y_0 = {y_0_fit:.4f}')
 
     fig, ax = plt.subplots()
-    ax.plot(t, U, ls=':', label=f'Messreihe {i}', color=colors[i-1], alpha=0.8)
-    ax.plot(t, f(t, *popt), label='Fitdaten')
+    ax.plot(t[plot_intervall[0]:plot_intervall[1]], U[plot_intervall[0]:plot_intervall[1]], marker='s', ls='', label=f'Messreihe {i}', color='tab:red', alpha=0.4)
+    ax.plot(t[plot_intervall[0]:plot_intervall[1]], f(t, *popt)[plot_intervall[0]:plot_intervall[1]], color='0', label='Fitdaten')
     ax.set_xlabel('Zeit t [s]')
     ax.set_ylabel('Spannung U [V]')
-    ax.set_title(f'Messreihe {i}, $U(t)={A_fit:.4f}\cdot e^(-{B_fit}\cdot t)\cdot cos(\omega\cdot t)$')
+    ax.set_title(f'Messreihe {i}, $U(t)={A_fit:.4f}\cdot e^(-{B_fit:.4f}\cdot t)\cdot cos({w_fit:.4f}\cdot t + {phi_fit:.4f}) + {y_0_fit:.4f}$')
     ax.legend()
     fig.savefig(OUTPUT / f'MessungPlusFit{i}')
     plt.close(fig)
-    pass
+    return popt
 
 def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     messung = CassyDaten(DATEN).messung(1)
@@ -74,5 +76,14 @@ def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
 mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', 10, -1)
 print(f'U = ({mittel:.4f}+-{sigma:.4f})V')
 
+omegas = []
 for i in range(1, 11):
-    auswertung_messreihe(DATEN_Messreihen, i)
+
+    fit_daten = auswertung_messreihe(DATEN_Messreihen, i)
+
+    omegas.append(fit_daten[2])
+
+omega_mean = np.mean(omegas)
+omega_std  = np.std(omegas, ddof=1)
+
+print(f'\nomega = ({omega_mean:.4f}+-{omega_std:.4f}) 1/s')
