@@ -5,8 +5,11 @@ from praktikum.cassy import CassyDaten
 from praktikum import analyse
 from praktikum import literaturwerte as lw
 
-DATEN_rauschen = r"V2_Mechanik\Daten\Pendel_rauschen_vorher_4.labx"
-DATEN_Messreihen = r"V2_Mechanik\Daten\Pendel_messung.labx"
+DATEN_rauschen = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_4.labx'
+DATEN_Messreihen = r'V2_Mechanik/Daten/Pendel_messung.labx'
+
+OUTPUT = Path(r'V2_Mechanik/Valentin/OutputDatein')
+OUTPUT.mkdir(exist_ok=True)
 
 cassy_daten_rauschen = CassyDaten(DATEN_rauschen)
 messung_rauschen     = cassy_daten_rauschen.messung(1)
@@ -15,21 +18,45 @@ print(CassyDaten(DATEN_Messreihen).info())
 print(cassy_daten_rauschen.info())
 
 def auswertung_messreihe(DATEN, i, trim_vorne=0, trim_hinten=-1):
-    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
+    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
     messung = CassyDaten(DATEN).messung(i)
     
-    t = messung.datenreihe("t").werte[trim_vorne:trim_hinten]
-    U = messung.datenreihe("U_B1").werte[trim_vorne:trim_hinten]
+    t = messung.datenreihe('t').werte[trim_vorne:trim_hinten]
+    U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
     
-    print(len(t), "   ", len(U))
-    plt.plot(t, U, label=f"Messreihe {i}", color=colors[i-1], alpha=0.8)
+    plt.plot(t, U, ls='x', label=f'Messreihe {i}', color=colors[i-1], alpha=0.8)
     pass
 
-U = messung_rauschen.datenreihe("U_B1").werte[10:]
+def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
+    messung = CassyDaten(DATEN).messung(1)
+
+    U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
+
+    mean, std = analyse.mittelwert_stdabw(U)
+
+    fig, ax = plt.subplots()
+    ax.hist(U, label='Histogramm der Rauschwerte', bins=bins)
+    ax.axvline(mean, color="tab:red",ls='--', label=f'Mittelwert = {mean:.4f} V')
+    ax.axvline(mean+std, color="tab:gray",ls='--', label=f'U = {mean:.4f}+-{std:.4f} V')
+    ax.axvline(mean-std, color="tab:gray",ls='--')
+    ax.set_xlabel('Spannung U [V]')
+    ax.set_ylabel("Häufigkeit")
+    ax.set_title(f'Rauschmessung Spannung U$\sigma$ = {std:.4f} V (n={len(U)})')
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(OUTPUT / dateiname, dpi=150)
+    plt.close(fig)
+
+    return mean, std
+
+mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', 10, -1)
+print(f'U = ({mittel}+-{sigma})V')
+
+U = messung_rauschen.datenreihe('U_B1').werte[10:]
 
 
 plt.figure()
-for i in range(1,11):
-    auswertung_messreihe(DATEN_Messreihen, i)
+# for i in range(1,11):
+#     auswertung_messreihe(DATEN_Messreihen, i)
 plt.legend()
 plt.show()
