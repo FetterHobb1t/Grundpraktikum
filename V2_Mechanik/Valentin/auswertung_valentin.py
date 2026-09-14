@@ -136,13 +136,18 @@ trim_vorne = 10
 
 rausch_mittel = []
 rausch_sigmas = []
-for DATEN in Rauschmessungen:
-    mittel, sigma = rauschmessung(DATEN, 'Rauschmessung', trim_vorne, -1)
+for i, DATEN in enumerate(Rauschmessungen):
+    mittel, sigma = rauschmessung(DATEN, f'Rauschmessung {i+1}', trim_vorne, -1)
+    
+    print(f'\nRauschmessung {i+1}')
+    print(f'rausch_mittel = {mittel}')
+    print(f'rausch_sigma  = {sigma}')
+    
     rausch_mittel.append(mittel)
     rausch_sigmas.append(sigma)
 
 mittel_ges = np.mean(rausch_mittel)
-sigma_ges  = np.std(rausch_sigmas) / np.sqrt(len(rausch_sigmas))
+sigma_ges  = np.mean(rausch_sigmas)
 print(f'U = ({mittel_ges:.4f}+-{sigma_ges:.4f})V')
 
 l1  = un.ufloat(61.5*10, np.sqrt((1 / np.sqrt(12))**2 + (0.7 / np.sqrt(3))**2))
