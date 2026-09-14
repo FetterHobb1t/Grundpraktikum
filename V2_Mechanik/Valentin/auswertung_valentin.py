@@ -14,6 +14,16 @@ DATEN_rauschen_4 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_4.labx'
 DATEN_rauschen_5 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_5.labx'
 Rauschmessungen = [DATEN_rauschen_1, DATEN_rauschen_2, DATEN_rauschen_3, DATEN_rauschen_4, DATEN_rauschen_5]
 
+DATEN_Periodenangleich_om_1 = r'V2_Mechanik/Daten/Pendel_perode_ohne_masse1.labx'
+DATEN_Periodenangleich_om_2 = r'V2_Mechanik/Daten/Pendel_perode_ohne_masse2.labx'
+DATEN_Periodenangleich_om_3 = r'V2_Mechanik/Daten/Pendel_perode_ohne_masse3.labx'
+DATEN_Pendel_ohne_Masse = [DATEN_Periodenangleich_om_1, DATEN_Periodenangleich_om_2, DATEN_Periodenangleich_om_3]
+
+DATEN_Periodenangleich_mm_1 = r'V2_Mechanik/Daten/Pendel_perode_ohne3_und_mit_masse1.labx'
+DATEN_Periodenangleich_mm_2 = r'V2_Mechanik/Daten/Pendel_perode_ohne3_und_mit_masse2.labx'
+DATEN_Periodenangleich_mm_3 = r'V2_Mechanik/Daten/Pendel_perode_ohne3_und_mit_masse3.labx'
+DATEN_Pendel_mit_Masse = [DATEN_Periodenangleich_mm_1, DATEN_Periodenangleich_mm_2, DATEN_Periodenangleich_mm_3]
+
 DATEN_Messreihen = r'V2_Mechanik/Daten/Pendel_messung.labx'
 
 OUTPUT = Path(r'V2_Mechanik/Valentin/OutputDatein')
@@ -21,6 +31,44 @@ OUTPUT.mkdir(exist_ok=True)
 
 cassy_daten_rauschen_1 = CassyDaten(DATEN_rauschen_1)
 messung_rauschen     = cassy_daten_rauschen_1.messung(1)
+
+
+def Periodebestimmen(DATEN, messreihe):
+    
+    messung = CassyDaten(DATEN).messung(messreihe)
+    
+    t = messung.datenreihe('t').werte[10:]
+    U = messung.datenreihe('U_B1').werte[10:]
+    
+    def f(t, A, B, w, phi, y_0):
+        return A * np.exp(-B * t) * np.cos(w * t + phi) + y_0
+        
+    popt, _ = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi, 0, np.mean(U)])
+    
+    return popt[2]
+
+def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
+    messung = CassyDaten(DATEN).messung(1)
+
+    U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
+
+    mean, std = analyse.mittelwert_stdabw(U)
+
+    fig, ax = plt.subplots()
+    ax.hist(U, label='Histogramm der Rauschwerte', bins=bins)
+    ax.axvline(mean, color="tab:red",ls='--', label=f'Mittelwert = {mean:.4f} V')
+    ax.axvline(mean+std, color="tab:gray",ls='--', label=f'U = {mean:.4f}+-{std:.4f} V')
+    ax.axvline(mean-std, color="tab:gray",ls='--')
+    ax.set_xlabel('Spannung U [V]')
+    ax.set_ylabel("Häufigkeit")
+    ax.set_title(f'Rauschmessung Spannung U  $\sigma$ = {std:.4f} V (n={len(U)})')
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(OUTPUT / dateiname, dpi=150)
+    plt.close(fig)
+
+    return mean, std
+
 
 def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_intervall=[3000,4000]):
 
@@ -110,28 +158,25 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
     plt.close(fig)
     return w_fit, chiq/dof, werr
 
-def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
-    messung = CassyDaten(DATEN).messung(1)
+perioden_om = []
+for DATEN in DATEN_Pendel_ohne_Masse:
+    perioden_om.append(Periodebestimmen(DATEN, 1))
 
-    U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
+perioden_mm = []
+for DATEN in DATEN_Pendel_mit_Masse:
+    perioden_mm.append(Periodebestimmen(DATEN, 2))
 
-    mean, std = analyse.mittelwert_stdabw(U)
+ratios = []
+for periode_om in perioden_om:
+    for periode_mm in perioden_mm:
+        ratios.append(periode_om / periode_mm)
 
-    fig, ax = plt.subplots()
-    ax.hist(U, label='Histogramm der Rauschwerte', bins=bins)
-    ax.axvline(mean, color="tab:red",ls='--', label=f'Mittelwert = {mean:.4f} V')
-    ax.axvline(mean+std, color="tab:gray",ls='--', label=f'U = {mean:.4f}+-{std:.4f} V')
-    ax.axvline(mean-std, color="tab:gray",ls='--')
-    ax.set_xlabel('Spannung U [V]')
-    ax.set_ylabel("Häufigkeit")
-    ax.set_title(f'Rauschmessung Spannung U  $\sigma$ = {std:.4f} V (n={len(U)})')
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(OUTPUT / dateiname, dpi=150)
-    plt.close(fig)
+ratio_mean = np.mean(ratios)
+ratio_std  = np.std(ratios)
 
-    return mean, std
-
+print(perioden_om)
+print(perioden_mm)
+print(f'Perioden_ratio_mittel = {ratio_mean} +/- {ratio_std}')
 trim_vorne = 10
 
 rausch_mittel = []
@@ -207,6 +252,8 @@ print(f'g_fit  = {g_fit:.6f} m/s²')
 print(f'g_l,d  = {g_l_d_err:.6f} m/s²')
 
 print(f'g = {g_mean:.4f} +/- {g_ges:.4f} m/s²')
+
+print(f'g / literaturwert = {g_mean/9.80665}')
 
 print(f'chiq/dof mittel = {np.mean(chiqs):.5f}')
 print('l_p = ', l_p)
