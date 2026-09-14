@@ -114,7 +114,7 @@ mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', trim_vorne, -1)
 print(f'U = ({mittel:.4f}+-{sigma:.4f})V')
 
 l1  = un.ufloat(61.5*10, np.sqrt((1/np.sqrt(12))**2 + (0.7/np.sqrt(3))**2))
-l2  = un.ufloat(2.715, 0.05 / np.sqrt(12))
+l2  = un.ufloat(2.715*10, 0.05 / np.sqrt(12))
 d_p = un.ufloat(80.0, 0.05 / np.sqrt(12))
 l_p = l1 + l2 + (d_p / 2)
 
