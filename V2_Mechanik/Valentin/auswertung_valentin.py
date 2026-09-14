@@ -279,8 +279,5 @@ print(f'g_fit  = {g_fit:.6f} m/s²')
 print(f'g_l,d  = {g_l_d_err:.6f} m/s²')
 
 print(f'g = {g_mean:.4f} +/- {g_ges:.4f} m/s²')
-
-print(f'g / literaturwert = {g_mean/9.80665}')
-
 print(f'chiq/dof mittel = {np.mean(chiqs):.5f}')
-print('l_p = ', l_p)
+print(f'Abweichung unser g von Literaturwert = {(g_mean-9.81071)/9.81071*100:.4f} %')
