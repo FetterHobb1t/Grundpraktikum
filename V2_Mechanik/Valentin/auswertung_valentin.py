@@ -19,19 +19,19 @@ messung_rauschen     = cassy_daten_rauschen.messung(1)
 print(CassyDaten(DATEN_Messreihen).info())
 print(cassy_daten_rauschen.info())
 
-def auswertung_messreihe(DATEN, i, rausch_sigma=None, trim_vorne=0, trim_hinten=-1, plot_intervall=[3000,4000]):
+def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_intervall=[3000,4000]):
 
     print(f'\nAuswertung {i}:')
     messung = CassyDaten(DATEN).messung(i)
     
-    t = messung.datenreihe('t').werte[trim_vorne:trim_hinten]
-    U = messung.datenreihe('U_B1').werte[trim_vorne:trim_hinten]
+    t = messung.datenreihe('t').werte[fit_trim[0]:fit_trim[1]]
+    U = messung.datenreihe('U_B1').werte[fit_trim[0]:fit_trim[1]]
 
     def f(t, A, B, w, phi, y_0):
         return A * np.exp(-B * t) * np.cos(w * t + phi) + y_0
     
     popt, pcov = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi, 0, np.mean(U)], sigma=rausch_sigma)
-    perr = np.sqrt(np.diag(pcov))
+    werr = np.sqrt(pcov[2,2])
     
     A_fit, B_fit, w_fit, phi_fit, y_0_fit = popt
     T_fit = 2 * np.pi / w_fit
@@ -47,18 +47,27 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, trim_vorne=0, trim_hinten=
     # A_fit, T_fit, phi_fit, B_fit, y_0_fit, T_0, chiq, dof = analyse.fit_gedaempfte_schwingung(t, U, ey=np.ones(len(U)))
     # popt = (A_fit, B_fit, 2 * np.pi / T_fit, phi_fit, y_0_fit)
     
-    print(f'U_0 = {A_fit:.4f}')
-    print(f'delta = {B_fit:.4f}')
-    print(f'w = {2 * np.pi / T_fit:.4f}')
+    # print(f'U_0 = {A_fit:.4f}')
+    # print(f'delta = {B_fit:.4f}')
+    print(f'w = ({w_fit:.4f}+-{werr})')
     print(f'T = {T_fit:.4f}')
-    print(f'phi = {phi_fit:.4f}')
-    print(f'y_0 = {y_0_fit:.4f}')
+    # print(f'phi = {phi_fit:.4f}')
+    # print(f'y_0 = {y_0_fit:.4f}')
     print(f'Chiq / dof = {chiq/dof}')
     print(f'dof = {dof}')
 
     fig, [ax, rs] = plt.subplots(2)
-    ax.plot(t[plot_intervall[0]:plot_intervall[1]], U[plot_intervall[0]:plot_intervall[1]], marker='s', ls='', label=f'Messreihe {i}', color='tab:red', alpha=0.4)
-    ax.plot(t[plot_intervall[0]:plot_intervall[1]], f(t, *popt)[plot_intervall[0]:plot_intervall[1]], color='0', label='Fitdaten')
+    ax.plot(t[plot_intervall[0]:plot_intervall[1]],
+            U[plot_intervall[0]:plot_intervall[1]],
+            marker='s',
+            ls='',
+            label=f'Messreihe {i}',
+            color='tab:red',
+            alpha=0.4)
+    ax.plot(t[plot_intervall[0]:plot_intervall[1]],
+            f(t, *popt)[plot_intervall[0]:plot_intervall[1]],
+            color='0',
+            label='Fitdaten')
     ax.set_xlabel('Zeit t [s]')
     ax.set_ylabel('Spannung U [V]')
     ax.set_title(f'Messreihe {i}, $U(t)={A_fit:.4f}\cdot e^(-{B_fit:.4f}\cdot t)\cdot cos({2 * np.pi / T_fit:.4f}\cdot t + {phi_fit:.4f}) + {y_0_fit:.4f}$')
@@ -76,7 +85,7 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, trim_vorne=0, trim_hinten=
     rs.legend()
     fig.savefig(OUTPUT / f'MessungPlusFit{i}')
     plt.close(fig)
-    return w_fit, chiq/dof
+    return w_fit, chiq/dof, werr
 
 def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     messung = CassyDaten(DATEN).messung(1)
@@ -100,20 +109,38 @@ def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
 
     return mean, std
 
-mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', 10, -1)
+trim_vorne = 10
+mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', trim_vorne, -1)
 print(f'U = ({mittel:.4f}+-{sigma:.4f})V')
+
+l1  = un.ufloat(61.5*10, np.sqrt((1/np.sqrt(12))**2 + (0.7/np.sqrt(3))**2))
+l2  = un.ufloat(2.715, 0.05 / np.sqrt(12))
+d_p = un.ufloat(80.0, 0.05 / np.sqrt(12))
+l_p = l1 + l2 + (d_p / 2)
 
 omegas = []
 chiqs  = []
+g_vals = []
+g_errs = []
 for i in range(1, 11):
 
-    fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,4000], rausch_sigma=sigma)
+    fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,4000], fit_trim=[trim_vorne,-1], rausch_sigma=sigma)
 
+    w = un.ufloat(fit_daten[0], fit_daten[2])
+    g = w**2 * (l_p / 1000) * (1 + (1/8) * ((d_p/1000) / (l_p/1000))**2)
+    
+    print(g)
+    
     omegas.append(fit_daten[0])
     chiqs.append(fit_daten[1])
+    g_vals.append(g.n)
+    g_errs.append(g.s)
 
 omega_mean = np.mean(omegas)
 omega_std  = np.std(omegas, ddof=1)
-
+g_mean     = np.mean(g_vals)
+g_std      = np.std(g_vals, ddof=1)
 print(f'\nomega = ({omega_mean:.4f}+-{omega_std:.4f}) 1/s')
+print(f'g = {g_mean:.4f}+/-{g_std}')
 print(f'chiq/dof mittel = {np.mean(chiqs):.5f}')
+print('l_p = ', l_p)
