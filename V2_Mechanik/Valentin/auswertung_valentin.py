@@ -45,7 +45,7 @@ def Periodebestimmen(DATEN, messreihe):
         
     popt, _ = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi, 0, np.mean(U)])
     
-    return popt[2]
+    return popt
 
 def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     messung = CassyDaten(DATEN).messung(1)
@@ -94,9 +94,6 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
         chiq += ((U[j] - fit[j]) / rausch_sigma)**2
     
     dof = len(U) - len(popt)
-
-    # A_fit, T_fit, phi_fit, B_fit, y_0_fit, T_0, chiq, dof = analyse.fit_gedaempfte_schwingung(t, U, ey=np.ones(len(U)))
-    # popt = (A_fit, B_fit, 2 * np.pi / T_fit, phi_fit, y_0_fit)
     
     # print(f'U_0 = {A_fit:.4f}')
     # print(f'delta = {B_fit:.4f}')
@@ -158,13 +155,40 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
     plt.close(fig)
     return w_fit, chiq/dof, werr
 
-perioden_om = []
+perioden_om   = []
+ergebnisse_om = []
 for DATEN in DATEN_Pendel_ohne_Masse:
-    perioden_om.append(Periodebestimmen(DATEN, 1))
+    ergebnis = Periodebestimmen(DATEN, 1)
+    ergebnisse_om.append(ergebnis)
+    perioden_om.append(ergebnis[2])
 
 perioden_mm = []
+ergebnisse_mm = []
 for DATEN in DATEN_Pendel_mit_Masse:
-    perioden_mm.append(Periodebestimmen(DATEN, 2))
+    ergebnis = Periodebestimmen(DATEN, 2)
+    ergebnisse_mm.append(ergebnis)
+    perioden_mm.append(ergebnis[2])
+
+def f(t, A, B, w, phi, y_0):
+        return A * np.exp(-B * t) * np.cos(w * t + phi) + y_0
+    
+fig, ax = plt.subplots(figsize=(10,7), constrained_layout=True)
+t = CassyDaten(DATEN_Periodenangleich_om_1).messung(1).datenreihe('t').werte
+for k in range(6):
+    if k <=2:
+        ergebnisse_om[k][3] = 0
+        ergebnisse_om[k][0] = abs(ergebnisse_om[k][0])
+        ax.plot(t, f(t, *ergebnisse_om[k]), label=f'fit_om {k+1}')
+    else:
+        ergebnisse_mm[k-3][3] = 0
+        ergebnisse_mm[k-3][0] = abs(ergebnisse_mm[k-3][0])
+        ax.plot(t, f(t, *ergebnisse_mm[k-3]), label=f'fit_mm {k-2}')
+ax.set_ylabel('Spannung U [V]')
+ax.set_xlabel('Zeit t [s]')
+ax.set_title('Graph der gefitteten Funktionen ohne Phasenverschiebung und Betrag von $U_0$')
+ax.legend(loc='upper right')
+fig.savefig(OUTPUT / 'Periodenvergleich', dpi=300, bbox_inches='tight')
+
 
 ratios = []
 for periode_om in perioden_om:
