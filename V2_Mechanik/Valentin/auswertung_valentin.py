@@ -30,7 +30,7 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
     def f(t, A, B, w, phi, y_0):
         return A * np.exp(-B * t) * np.cos(w * t + phi) + y_0
     
-    popt, pcov = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi, 0, np.mean(U)], sigma=rausch_sigma)
+    popt, pcov = curve_fit(f, t, U, p0=[U.max(), 0.1, 2 * np.pi, 0, np.mean(U)], sigma=rausch_sigma, absolute_sigma=True)
     werr = np.sqrt(pcov[2,2])
     
     A_fit, B_fit, w_fit, phi_fit, y_0_fit = popt
@@ -70,7 +70,7 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
             label='Fitdaten')
     ax.set_xlabel('Zeit t [s]')
     ax.set_ylabel('Spannung U [V]')
-    ax.set_title(f'Messreihe {i}, $U(t)={A_fit:.4f}\cdot e^(-{B_fit:.4f}\cdot t)\cdot cos({2 * np.pi / T_fit:.4f}\cdot t + {phi_fit:.4f}) + {y_0_fit:.4f}$')
+    ax.set_title(f'Messreihe {i}')
     ax.legend()
     inter = 1
     rs.errorbar(t[plot_intervall[0]:plot_intervall[1]:inter],
@@ -101,7 +101,7 @@ def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     ax.axvline(mean-std, color="tab:gray",ls='--')
     ax.set_xlabel('Spannung U [V]')
     ax.set_ylabel("Häufigkeit")
-    ax.set_title(f'Rauschmessung Spannung U$\sigma$ = {std:.4f} V (n={len(U)})')
+    ax.set_title(f'Rauschmessung Spannung U  $\sigma$ = {std:.4f} V (n={len(U)})')
     ax.legend()
     fig.tight_layout()
     fig.savefig(OUTPUT / dateiname, dpi=150)
@@ -138,11 +138,34 @@ for i in range(1, 11):
 
 omega_mean = np.mean(omegas)
 omega_std  = np.std(omegas, ddof=1)
-g_mean     = np.mean(g_vals)
-g_std      = np.std(g_vals, ddof=1)
-g_ind      = np.sqrt(np.sum(np.array(g_errs)**2)) / len(g_errs)
-g_ges      = np.sqrt(g_std**2 + g_ind**2)
-print(f'\nomega = ({omega_mean:.4f}+-{omega_std:.4f}) 1/s')
-print(f'g = {g_mean:.4f}+/-{g_ges}')
+
+# g aus gemitteltem omega
+g_mean = (omega_mean**2 * (l_p.n / 1000) * (1 + (1/8) * ((d_p.n / 1000) / (l_p.n / 1000))**2))
+
+# Fehler aus Streuung der Messreihen
+g_std = np.std(g_vals, ddof=1)
+g_stat = g_std / np.sqrt(len(g_vals))
+
+# Fehler der einzelnen Fits
+g_fit = (np.sqrt(np.sum(np.array(g_errs)**2)) / len(g_errs))
+
+# Gemeinsamer Fehler von l_p und d_p
+g_l_d = (un.ufloat(omega_mean, 0)**2 * (l_p / 1000) * (1 + (1/8) * ((d_p/1000) / (l_p/1000))**2))
+
+g_l_d_err = g_l_d.s
+
+# Gesamtfehler
+g_ges = np.sqrt(g_stat**2 + g_fit**2 + g_l_d_err**2)
+
+# Ausgabe
+print(f'\nomega = ({omega_mean:.4f} +/- {omega_std:.4f}) 1/s')
+
+print(f'g_mean = {g_mean:.6f} m/s²')
+print(f'g_stat = {g_stat:.6f} m/s²')
+print(f'g_fit  = {g_fit:.6f} m/s²')
+print(f'g_l,d  = {g_l_d_err:.6f} m/s²')
+
+print(f'g = {g_mean:.4f} +/- {g_ges:.4f} m/s²')
+
 print(f'chiq/dof mittel = {np.mean(chiqs):.5f}')
 print('l_p = ', l_p)
