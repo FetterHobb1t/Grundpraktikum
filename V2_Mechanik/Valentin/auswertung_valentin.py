@@ -7,17 +7,20 @@ from praktikum.cassy import CassyDaten
 from praktikum import analyse
 from praktikum import literaturwerte as lw
 
-DATEN_rauschen = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_4.labx'
+DATEN_rauschen_1 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher.labx'
+DATEN_rauschen_2 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_2.labx'
+DATEN_rauschen_3 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_3.labx'
+DATEN_rauschen_4 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_4.labx'
+DATEN_rauschen_5 = r'V2_Mechanik/Daten/Pendel_rauschen_vorher_5.labx'
+Rauschmessungen = [DATEN_rauschen_1, DATEN_rauschen_2, DATEN_rauschen_3, DATEN_rauschen_4, DATEN_rauschen_5]
+
 DATEN_Messreihen = r'V2_Mechanik/Daten/Pendel_messung.labx'
 
 OUTPUT = Path(r'V2_Mechanik/Valentin/OutputDatein')
 OUTPUT.mkdir(exist_ok=True)
 
-cassy_daten_rauschen = CassyDaten(DATEN_rauschen)
-messung_rauschen     = cassy_daten_rauschen.messung(1)
-
-print(CassyDaten(DATEN_Messreihen).info())
-print(cassy_daten_rauschen.info())
+cassy_daten_rauschen_1 = CassyDaten(DATEN_rauschen_1)
+messung_rauschen     = cassy_daten_rauschen_1.messung(1)
 
 def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_intervall=[3000,4000]):
 
@@ -75,7 +78,7 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
         f(t, *popt)[plot_intervall[0]:plot_intervall[1]],
         lw=2,
         color='tab:orange',
-        label='Fitdaten'
+        label=f'$U(t)={A_fit:.4f}\cdot e^(-{B_fit:.4f}\cdot t)\cdot cos({2 * np.pi / T_fit:.4f}\cdot t + {phi_fit:.4f}) + {y_0_fit:.4f}$'
         )
     ax.set_xlabel('Zeit t [s]')
     ax.set_ylabel('Spannung U [V]')
@@ -130,8 +133,17 @@ def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     return mean, std
 
 trim_vorne = 10
-mittel, sigma = rauschmessung(DATEN_rauschen, 'Rauschmessung', trim_vorne, -1)
-print(f'U = ({mittel:.4f}+-{sigma:.4f})V')
+
+rausch_mittel = []
+rausch_sigmas = []
+for DATEN in Rauschmessungen:
+    mittel, sigma = rauschmessung(DATEN, 'Rauschmessung', trim_vorne, -1)
+    rausch_mittel.append(mittel)
+    rausch_sigmas.append(sigma)
+
+mittel_ges = np.mean(rausch_mittel)
+sigma_ges  = np.std(rausch_sigmas) / np.sqrt(len(rausch_sigmas))
+print(f'U = ({mittel_ges:.4f}+-{sigma_ges:.4f})V')
 
 l1  = un.ufloat(61.5*10, np.sqrt((1 / np.sqrt(12))**2 + (0.7 / np.sqrt(3))**2))
 l2  = un.ufloat(2.715*10, np.sqrt((0.05 / np.sqrt(12))**2 + (0.05 / np.sqrt(3))**2))
@@ -148,7 +160,7 @@ g_vals = []
 g_errs = []
 for i in range(1, 11):
 
-    fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,3500], fit_trim=[trim_vorne,-1], rausch_sigma=sigma)
+    fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,3500], fit_trim=[trim_vorne,-1], rausch_sigma=sigma_ges)
 
     w = un.ufloat(fit_daten[0], fit_daten[2])
     g = w**2 * (l_p / 1000) * (1 + (1/8) * ((d_p/1000) / (l_p/1000))**2)
