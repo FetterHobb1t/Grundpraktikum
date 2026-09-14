@@ -56,34 +56,54 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
     print(f'Chiq / dof = {chiq/dof}')
     print(f'dof = {dof}')
 
-    fig, [ax, rs] = plt.subplots(2)
-    ax.plot(t[plot_intervall[0]:plot_intervall[1]],
-            U[plot_intervall[0]:plot_intervall[1]],
-            marker='s',
-            ls='',
-            label=f'Messreihe {i}',
-            color='tab:red',
-            alpha=0.4)
-    ax.plot(t[plot_intervall[0]:plot_intervall[1]],
-            f(t, *popt)[plot_intervall[0]:plot_intervall[1]],
-            color='0',
-            label='Fitdaten')
+    fig, [ax, rs] = plt.subplots(
+        2,
+        figsize=(10,7),
+        constrained_layout=True
+    )
+    ax.plot(
+        t[plot_intervall[0]:plot_intervall[1]],
+        U[plot_intervall[0]:plot_intervall[1]],
+        marker='o',
+        ls='',
+        label=f'Messreihe {i}',
+        color='tab:blue',
+        alpha=0.6
+        )
+    ax.plot(
+        t[plot_intervall[0]:plot_intervall[1]],
+        f(t, *popt)[plot_intervall[0]:plot_intervall[1]],
+        lw=2,
+        color='tab:orange',
+        label='Fitdaten'
+        )
     ax.set_xlabel('Zeit t [s]')
     ax.set_ylabel('Spannung U [V]')
     ax.set_title(f'Messreihe {i}')
-    ax.legend()
+    ax.legend(loc='upper right')
     inter = 1
-    rs.errorbar(t[plot_intervall[0]:plot_intervall[1]:inter],
-                (U - f(t, *popt))[plot_intervall[0]:plot_intervall[1]:inter],
-                ls='',
-                color='tab:red',
-                yerr=rausch_sigma,
-                label='Residuen')
+    rs.plot(
+        t[plot_intervall[0]:plot_intervall[1]:inter],
+        (U - f(t, *popt))[plot_intervall[0]:plot_intervall[1]:inter],
+        marker='o',
+        ls='',
+        color='tab:blue',
+        alpha=1
+    )
+    rs.errorbar(
+        t[plot_intervall[0]:plot_intervall[1]:inter],
+        (U - f(t, *popt))[plot_intervall[0]:plot_intervall[1]:inter],
+        fmt='.',
+        color='tab:blue',
+        yerr=rausch_sigma,
+        label='Residuen',
+        alpha=0.5
+        )
     rs.set_xlabel('Zeit t [s]')
     rs.set_ylabel('Residuen')
-    rs.grid(True, alpha=0.8)
-    rs.legend()
-    fig.savefig(OUTPUT / f'MessungPlusFit{i}')
+    rs.grid(True, alpha=0.3)
+    rs.legend(loc='upper right')
+    fig.savefig(OUTPUT / f'MessungPlusFit{i}', dpi=300, bbox_inches='tight')
     plt.close(fig)
     return w_fit, chiq/dof, werr
 
@@ -118,13 +138,17 @@ l2  = un.ufloat(2.715*10, np.sqrt((0.05 / np.sqrt(12))**2 + (0.05 / np.sqrt(3))*
 d_p = un.ufloat(80.0, np.sqrt((0.05 / np.sqrt(12))**2 + (0.05 / np.sqrt(3))**2))
 l_p = l1 + l2 + (d_p / 2)
 
+print(l1)
+print(l2)
+print(d_p)
+print(l_p)
 omegas = []
 chiqs  = []
 g_vals = []
 g_errs = []
 for i in range(1, 11):
 
-    fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,4000], fit_trim=[trim_vorne,-1], rausch_sigma=sigma)
+    fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,3500], fit_trim=[trim_vorne,-1], rausch_sigma=sigma)
 
     w = un.ufloat(fit_daten[0], fit_daten[2])
     g = w**2 * (l_p / 1000) * (1 + (1/8) * ((d_p/1000) / (l_p/1000))**2)
