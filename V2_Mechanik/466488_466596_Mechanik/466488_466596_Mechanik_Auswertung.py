@@ -55,13 +55,13 @@ def rauschmessung(DATEN, dateiname, trim_vorne, trim_hinten, bins=25):
     mean, std = analyse.mittelwert_stdabw(U)
 
     fig, ax = plt.subplots()
-    ax.hist(U, label='Histogramm der Rauschwerte', bins=bins)
-    ax.axvline(mean, color="tab:red",ls='--', label=f'Mittelwert = {mean:.4f} V')
+    ax.hist(U, label='Histogram of Noise Values', bins=bins)
+    ax.axvline(mean, color="tab:red",ls='--', label=f'Mean = {mean:.4f} V')
     ax.axvline(mean+std, color="tab:gray",ls='--', label=f'U = {mean:.4f}+-{std:.4f} V')
     ax.axvline(mean-std, color="tab:gray",ls='--')
-    ax.set_xlabel('Spannung U [V]')
-    ax.set_ylabel("Häufigkeit")
-    ax.set_title(f'Rauschmessung Spannung U  $\sigma$ = {std:.4f} V (n={len(U)})')
+    ax.set_xlabel('Voltage U [V]')
+    ax.set_ylabel("Frequency")
+    ax.set_title(f'Voltage Noise Measurement $\sigma$ = {std:.4f} V (n={len(U)})')
     ax.legend()
     fig.tight_layout()
     fig.savefig(OUTPUT / dateiname, dpi=150)
@@ -116,7 +116,7 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
         capsize=3,
         yerr=rausch_sigma,
         ls='',
-        label=f'Messreihe {i}',
+        label=f'Series of Measurement {i}',
         color='tab:blue',
         alpha=0.6
         )
@@ -127,9 +127,9 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
         color='tab:orange',
         label=f'$U(t)={A_fit:.4f}\cdot e^(-{B_fit:.4f}\cdot t)\cdot cos({2 * np.pi / T_fit:.4f}\cdot t + {phi_fit:.4f}) + {y_0_fit:.4f}$'
         )
-    ax.set_xlabel('Zeit t [s]')
-    ax.set_ylabel('Spannung U [V]')
-    ax.set_title(f'Messreihe {i}')
+    ax.set_xlabel('Time t [s]')
+    ax.set_ylabel('Voltage U [V]')
+    ax.set_title(f'Series of Measurement {i}')
     ax.legend(loc='upper right')
     inter = 1
     rs.plot(
@@ -146,14 +146,14 @@ def auswertung_messreihe(DATEN, i, rausch_sigma=None, fit_trim=[0,-1], plot_inte
         fmt='.',
         color='tab:blue',
         yerr=rausch_sigma,
-        label='Residuen',
+        label='Residuals',
         alpha=0.5
         )
-    rs.set_xlabel('Zeit t [s]')
-    rs.set_ylabel('Residuen')
+    rs.set_xlabel('Time t [s]')
+    rs.set_ylabel('Residuals')
     rs.grid(True, alpha=0.3)
     rs.legend(loc='upper right')
-    fig.savefig(OUTPUT / f'MessungPlusFit{i}', dpi=300, bbox_inches='tight')
+    fig.savefig(OUTPUT / f'MessungPlusFit{i}', dpi=200, bbox_inches='tight')
     plt.close(fig)
     return T_fit, chiq/dof, Terr
 
@@ -185,11 +185,11 @@ for k in range(6):
         ergebnisse_mm[k-3][3] = 0
         ergebnisse_mm[k-3][0] = abs(ergebnisse_mm[k-3][0])
         ax.plot(t, f(t, *ergebnisse_mm[k-3]), label=f'fit_mm {k-2}')
-ax.set_ylabel('Spannung U [V]')
-ax.set_xlabel('Zeit t [s]')
-ax.set_title('Graph der gefitteten Funktionen ohne Phasenverschiebung und Betrag von $U_0$')
+ax.set_ylabel('Voltage U [V]')
+ax.set_xlabel('Time t [s]')
+ax.set_title('Graph of the fitted functions without phase shift and magnitude of $U_0$')
 ax.legend(loc='upper right')
-fig.savefig(OUTPUT / 'Periodenvergleich', dpi=300, bbox_inches='tight')
+fig.savefig(OUTPUT / 'Periodenvergleich', dpi=200, bbox_inches='tight')
 
 
 ratios = []
@@ -198,7 +198,7 @@ for periode_om in perioden_om:
         ratios.append(periode_om / periode_mm)
 
 ratio_mean = np.mean(ratios)
-ratio_std  = np.std(ratios)
+ratio_std  = np.std(ratios, ddof=1)
 
 print(perioden_om)
 print(perioden_mm)
@@ -218,7 +218,7 @@ for i, DATEN in enumerate(Rauschmessungen):
     rausch_sigmas.append(sigma)
 
 mittel_ges = np.mean(rausch_mittel)
-sigma_ges  = np.mean(rausch_sigmas)
+sigma_ges  = np.sqrt(np.mean(np.array(rausch_sigmas)**2))
 print(f'U = ({mittel_ges:.4f}+-{sigma_ges:.4f})V')
 
 l1  = un.ufloat(61.5*10, np.sqrt((1 / np.sqrt(12))**2 + (0.7 / np.sqrt(3))**2))
@@ -240,7 +240,7 @@ for i in range(1, 11):
     fit_daten = auswertung_messreihe(DATEN_Messreihen, i, plot_intervall=[3000,3500], fit_trim=[trim_vorne,-1], rausch_sigma=sigma_ges)
 
     T = un.ufloat(fit_daten[0], fit_daten[2])
-    g = 4 * np.pi**2 / T**2 * (l_p / 1000) * (1 + (1/8) * ((d_p/1000) / (l_p/1000))**2)
+    g = 4 * np.pi**2 / T**2 * (l_p.n / 1000) * (1 + (1/8) * ((d_p.n/1000) / (l_p.n/1000))**2)
     
     print(g)
     
@@ -278,6 +278,6 @@ print(f'g_stat = {g_stat:.6f} m/s²')
 print(f'g_fit  = {g_fit:.6f} m/s²')
 print(f'g_l,d  = {g_l_d_err:.6f} m/s²')
 
-print(f'g = {g_mean:.4f} +/- {g_ges:.4f} m/s²')
+print(f'g = {g_mean:.4f} +/- {g_ges:.6f} m/s²')
 print(f'chiq/dof mittel = {np.mean(chiqs):.5f}')
-print(f'Abweichung unser g von Literaturwert = {(g_mean-9.81071)/9.81071*100:.4f} %')
+print(f'Abweichung unser g von Literaturwert = {(g_mean-9.810836)/g_ges:.4f}')
