@@ -111,7 +111,7 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
     inter = 1
     rs.plot(
         m,
-        (p - fit),
+        residuals,
         marker='o',
         ls='',
         color='tab:blue',
@@ -119,7 +119,7 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
     )
     rs.errorbar(
         m,
-        (p - fit),
+        residuals,
         fmt='.',
         color='tab:blue',
         yerr=noise_sigma, ### idk
@@ -144,9 +144,9 @@ ea_p_list       = []
 eb_p_list       = []
 chiq_dof_p_list = []
 for i, DATA in enumerate(DATA_kum_p):
-    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], None, 'Preasure p [hPa]', 'Druck', i)
+    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], 1, 'Preasure p [hPa]', 'Druck', i) # sigma ca = 8 ?? idk
     
-    print(f'\nFit {i}:')
+    print(f'\nFit {i+1}:')
     print(f'a = ({a_p:.4f} +/- {ea_p:.4f})')
     print(f'b = ({b_p:.4f} +/- {eb_p:.4f})')
     print(f'Chi2 / dof = {chiq_dof_p:.5f}')
@@ -180,7 +180,7 @@ chiq_dof_k_list = []
 for i, DATA in enumerate(DATA_kum_k):
     a_k, b_k, ea_k, eb_k, chiq_dof_k, _ = DATA_analyse([DATA_kappa_m, DATA], sigma_red, 'kappa', 'Kappa', i)
     
-    print(f'\nFit {i}:')
+    print(f'\nFit {i+1}:')
     print(f'a = ({a_k:.4f} +/- {ea_k:.4f})')
     print(f'b = ({b_k:.4f} +/- {eb_k:.4f})')
     print(f'Chi2 / dof = {chiq_dof_k:.5f}')
@@ -215,7 +215,7 @@ chiq_dof_l_list = []
 for i, DATA in enumerate(DATA_kum_l):
     a_l, b_l, ea_l, eb_l, chiq_dof_l, _ = DATA_analyse([DATA_lambda_m, DATA], sigma_green, 'lambda', 'Lambda', i)
     
-    print(f'\nFit {i}:')
+    print(f'\nFit {i+1}:')
     print(f'a = ({a_l:.4f} +/- {ea_l:.4f})')
     print(f'b = ({b_l:.4f} +/- {eb_l:.4f})')
     print(f'Chi2 / dof = {chiq_dof_l:.5f}')
