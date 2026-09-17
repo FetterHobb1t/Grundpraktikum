@@ -32,14 +32,17 @@ DATA_lambda_3 = [7.550, 7.494, 7.440, 7.389, 7.338, 7.289, 7.233, 7.185, 7.130, 
 DATA_lambda_m = [    0,    10,    20,    30,    40,    50,    60,    70,    80,    90,   100]
 DATA_kum_l = [DATA_lambda_1, DATA_lambda_2, DATA_lambda_3]
 
+lamdba_rot = un.ufloat(632.8e-6, 0.1e-6)
+lamdba_grün_hersteller = 532.0
+
 def rauschmessung (DATA, bins=25, dateiname='Rauschmessung'):
     
     mean, std = analyse.mittelwert_stdabw(DATA)
     
     fig, ax = plt.subplots()
     ax.hist(DATA, label='Histogram of Noise Values', bins=bins)
-    ax.axvline(mean, color='tab:red',ls='--', label=f'Mean = {mean:.4f} V')
-    ax.axvline(mean+std, color='tab:gray',ls='--', label=f'U = {mean:.4f}+-{std:.4f} V')
+    ax.axvline(mean, color='tab:red',ls='--', label=f'Mean = {mean:.4f} mm')
+    ax.axvline(mean+std, color='tab:gray',ls='--', label=f'S = {mean:.4f}+-{std:.4f} mm')
     ax.axvline(mean-std, color='tab:gray',ls='--')
     ax.set_xlabel('s [mm]')
     ax.set_ylabel('Frequency')
@@ -51,7 +54,7 @@ def rauschmessung (DATA, bins=25, dateiname='Rauschmessung'):
     
     return mean, std
 
-def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
+def DATA_analyse(DATA, noise_sigma, y_label, titel_zusatz, dateiname_zusatz, i):
     
     m = np.array(DATA[0])
     p = np.array(DATA[1])
@@ -64,9 +67,7 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
     else:
          popt, pcov = curve_fit(f, m, p)
          
-    a = popt[0]
-    b = popt[1]
-    
+    a,b = popt
     ea = np.sqrt(pcov[0,0])
     eb = np.sqrt(pcov[1,1])
     
@@ -90,7 +91,7 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
     ax.errorbar(
         m,
         p,
-        fmt='',
+        fmt='o',
         capsize=3,
         yerr=noise_sigma,  ### idk
         ls='',
@@ -98,16 +99,17 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
         color='tab:blue',
         alpha=0.6
         )
+    m_line = np.linspace(m.min(), m.max(), 100)
     ax.plot(
-        m,
-        fit,
+        m_line,
+        f(m_line, *popt),
         lw=2,
         color='tab:orange',
-        label=f'linear regression'
+        label=f'Fit: s = ({a:.5f}$\\pm${ea:.5f})$\\cdot$m + ({b:.4f}$\\pm${eb:.4f})'
         )
-    ax.set_xlabel('m')
+    ax.set_xlabel('Order m')
     ax.set_ylabel(y_label)
-    ax.set_title(f'Series of Measurement {i+1}')
+    ax.set_title(f'Series of Measurement {i+1} (χ²/dof = {chiq_dof:.2f})')
     ax.legend(loc='upper right')
     inter = 1
     rs.plot(
@@ -127,8 +129,8 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
         label='Residuals',
         alpha=0.5
         )
-    rs.set_xlabel('m')
-    rs.set_ylabel('Residuals')
+    rs.set_xlabel('Order m')
+    rs.set_ylabel('Residuals [mm]')
     rs.grid(True, alpha=0.3)
     rs.legend(loc='upper right')
     fig.savefig(OUTPUT / f'Messung_Plus_Fit_{dateiname_zusatz}_{i+1}', dpi=200, bbox_inches='tight')
@@ -136,114 +138,56 @@ def DATA_analyse(DATA, noise_sigma, y_label, dateiname_zusatz, i):
     
     return a, b, ea, eb, chiq_dof, pcov
 
+def serie_auswerten(DATA_kum, m_werte, noise_sigma, y_label,titel_zusatz, dateiname_zusatz):
+    a_list, b_list, chiq_dof_list = [], [], []
+
+    for i, DATA in enumerate(DATA_kum):
+        a,b,ea,eb,chiq_dof, _ = DATA_analyse([m_werte, DATA], noise_sigma, y_label, titel_zusatz, dateiname_zusatz, i)
+        print(f'\n{titel_zusatz}-Fit {i+1}:')
+        print(f'    a = ({a:.6f} +/- {ea:.6f})')
+        print(f'    b = ({b:.6f} +/- {eb:.6f})')
+        print(f'    chi2/dof = {chiq_dof:.4f}')
+        a_list.append(a)
+        b_list.append(b)
+        chiq_dof_list.append(chiq_dof)
+
+    a_list = np.array(a_list)
+    b_list = np.array(b_list)
+    mean_a = np.mean(a_list)
+    stat_a = np.std(a_list, ddof=1)/np.sqrt(len(a_list))
+    mean_b = np.mean(b_list)
+    stat_b = np.std(b_list, ddof=1)/np.sqrt(len(b_list))
+    mean_chiq_dof = np.mean(chiq_dof_list)
+    print(f'\n--- {titel_zusatz}: Mean over {len(a_list)} messurments ---')
+    print(f'Mean a = ({mean_a:.6f} +/- {stat_a:.6f})')
+    print(f'Mean b = ({mean_b:.4f} +/- {stat_b:.4f})')
+    print(f'Mean chi2/dof = {mean_chiq_dof:.4f}')
+
+    return un.ufloat(mean_a, stat_a), un.ufloat(mean_b, stat_b), mean_chiq_dof
+
 mittel_red, sigma_red = rauschmessung(DATA_noise_red, dateiname='Rauschmessung_red')
 mittel_green, sigma_green = rauschmessung(DATA_noise_green, dateiname='Rauschmessung_green')
 
-a_p_list        = []
-b_p_list        = []
-ea_p_list       = []
-eb_p_list       = []
-chiq_dof_p_list = []
-for i, DATA in enumerate(DATA_kum_p):
-    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], None, 'Preasure p [hPa]', 'Druck', i) # sigma ca = 8 ?? idk
-    
-    print(f'\nFit {i+1}:')
-    print(f'a = ({a_p:.4f} +/- {ea_p:.4f})')
-    print(f'b = ({b_p:.4f} +/- {eb_p:.4f})')
-    print(f'Chi2 / dof = {chiq_dof_p:.5f}')
-    
-    a_p_list.append(a_p)
-    b_p_list.append(b_p)
-    ea_p_list.append(ea_p)
-    eb_p_list.append(eb_p)
-    chiq_dof_p_list.append(chiq_dof_p)
-    
-mean_a_p = np.mean(a_p_list)
-std_a_p  = np.std(a_p_list, ddof=1)
-stat_a_p = std_a_p / np.sqrt(len(a_p_list))
+print(f'Noise Messurment red:   ({mittel_red:.4f} +/- {sigma_red:.4f})mm')
+print(f'Noise Messurment green: ({mittel_green:.4f} +/- {sigma_green:.4f})mm')
 
-mean_b_p = np.mean(b_p_list)
-std_b_p  = np.std(b_p_list, ddof=1)
-stat_b_p = std_b_p / np.sqrt(len(b_p_list))
+a_p, b_p, chiq_dof_p = serie_auswerten(
+    DATA_kum_p, DATA_preasure_m, None, 'Druck p [hPa]', 'Druckabhängigkeit', 'Druck'
+)
 
-mean_chiq_dof = np.mean(chiq_dof_p_list)
+a_k, b_k, chiq_dof_k = serie_auswerten(
+    DATA_kum_k, DATA_kappa_m, sigma_red, 's [mm]', 'k-Kalibration (rot)', 'Kappa'
+)
 
-print(f'\nMittelwert a_p = ({mean_a_p:.5f} +/- {stat_a_p:.5f})')
-print(f'Mittelwert b_p = ({mean_b_p:.5f} +/- {stat_b_p:.5f})')
-print(f'Mean Chi2 / dof = {mean_chiq_dof:.5f}')
+k = lamdba_rot / (2*a_k)
+print(f'\n |k| = ({abs(k.n):.6f} +/- {k.s:.6f})')
 
-
-a_k_list        = []
-b_k_list        = []
-ea_k_list       = []
-eb_k_list       = []
-chiq_dof_k_list = []
-for i, DATA in enumerate(DATA_kum_k):
-    a_k, b_k, ea_k, eb_k, chiq_dof_k, _ = DATA_analyse([DATA_kappa_m, DATA], sigma_red, 'kappa', 'Kappa', i)
-    
-    print(f'\nFit {i+1}:')
-    print(f'a = ({a_k:.4f} +/- {ea_k:.4f})')
-    print(f'b = ({b_k:.4f} +/- {eb_k:.4f})')
-    print(f'Chi2 / dof = {chiq_dof_k:.5f}')
-    
-    a_k_list.append(a_k)
-    b_k_list.append(b_k)
-    ea_k_list.append(ea_k)
-    eb_k_list.append(eb_k)
-    chiq_dof_k_list.append(chiq_dof_k)
-    
-mean_a_k = np.mean(a_k_list)
-std_a_k  = np.std(a_k_list, ddof=1)
-stat_a_k = std_a_k / np.sqrt(len(a_k_list))
-
-mean_b_k = np.mean(b_k_list)
-std_b_k  = np.std(b_k_list, ddof=1)
-stat_b_k = std_b_k / np.sqrt(len(b_k_list))
-
-mean_chiq_dof_k = np.mean(chiq_dof_k_list)
-
-lamdba_rot = 632.8e-6
-k= lamdba_rot/(2*mean_a_k)
-
-print(f'\nMittelwert a_k = ({mean_a_k:.5f} +/- {stat_a_k:.5f})')
-print(f'Mittelwert b_k = ({mean_b_k:.5f} +/- {stat_b_k:.5f})')
-print(f'Mean Chi2 / dof = {mean_chiq_dof_k:.5f}')
-print(f'Rauschmessung Red: {mittel_red} +/- {sigma_red}')
-print(f'Übersetzungskoeffizient: k= {k:.5f}')
-
-
-a_l_list        = []
-b_l_list        = []
-ea_l_list       = []
-eb_l_list       = []
-chiq_dof_l_list = []
-for i, DATA in enumerate(DATA_kum_l):
-    a_l, b_l, ea_l, eb_l, chiq_dof_l, _ = DATA_analyse([DATA_lambda_m, DATA], sigma_green, 'lambda', 'Lambda', i)
-    
-    print(f'\nFit {i+1}:')
-    print(f'a = ({a_l:.4f} +/- {ea_l:.4f})')
-    print(f'b = ({b_l:.4f} +/- {eb_l:.4f})')
-    print(f'Chi2 / dof = {chiq_dof_l:.5f}')
-    
-    a_l_list.append(a_l)
-    b_l_list.append(b_l)
-    ea_l_list.append(ea_l)
-    eb_l_list.append(eb_l)
-    chiq_dof_l_list.append(chiq_dof_l)
-    
-mean_a_l = np.mean(a_l_list)
-std_a_l  = np.std(a_l_list, ddof=1)
-stat_a_l = std_a_l / np.sqrt(len(a_l_list))
-
-mean_b_l = np.mean(b_l_list)
-std_b_l  = np.std(b_l_list, ddof=1)
-stat_b_l = std_b_l / np.sqrt(len(b_l_list))
-
-mean_chiq_dof_l = np.mean(chiq_dof_l_list)
-lamdba_grün = (k*2*mean_a_l)
-
-print(f'\nMittelwert a_l = ({mean_a_l:.5f} +/- {stat_a_l:.5f})')
-print(f'Mittelwert b_l = ({mean_b_l:.5f} +/- {stat_b_l:.5f})')
-print(f'Mean Chi2 / dof = {mean_chiq_dof_l:.5f}')
-print(f'Rauschmessung Green: {mittel_green} +/- {sigma_green}')
-print(f'Wellenlänge $\lambda$ vom Grünen Laser = {lamdba_grün*1e6:.2f}')
+a_l, b_l, chiq_dof_l = serie_auswerten(
+    DATA_kum_l, DATA_lambda_m, sigma_green, 's [mm]', 'Wellenlänge (grün)', 'Lambda'
+)
+lambda_grün = k*2*a_l*1e6
+print(f'\n Wavelenght of green Laser = ({lambda_grün.n:.2f} +/- {lambda_grün.s:.2f}) mm')
+abweichung = lambda_grün.n - lamdba_grün_hersteller
+abweichung_sigma = abs(abweichung)/lambda_grün.s
+print(f'\n Reference Value of green Laser: {lamdba_grün_hersteller} nm')
+print(f'Difference: {abweichung:+.2f} nm = {abweichung_sigma:.2f} sigma')
