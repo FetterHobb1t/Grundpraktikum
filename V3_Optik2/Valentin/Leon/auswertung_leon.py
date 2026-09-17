@@ -145,7 +145,7 @@ ea_p_list       = []
 eb_p_list       = []
 chiq_dof_p_list = []
 for i, DATA in enumerate(DATA_kum_p):
-    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], sigma_p, 'Preasure p [hPa]', 'Druck', i) # sigma ca = 8 ?? idk
+    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], None, 'Preasure p [hPa]', 'Druck', i) # sigma ca = 8 ?? idk
     
     print(f'\nFit {i+1}:')
     print(f'a = ({a_p:.4f} +/- {ea_p:.4f})')
@@ -202,10 +202,14 @@ stat_b_k = std_b_k / np.sqrt(len(b_k_list))
 
 mean_chiq_dof_k = np.mean(chiq_dof_k_list)
 
+lamdba_rot = 632.8e-6
+k= lamdba_rot/(2*mean_a_k)
+
 print(f'\nMittelwert a_k = ({mean_a_k:.5f} +/- {stat_a_k:.5f})')
 print(f'Mittelwert b_k = ({mean_b_k:.5f} +/- {stat_b_k:.5f})')
 print(f'Mean Chi2 / dof = {mean_chiq_dof_k:.5f}')
 print(f'Rauschmessung Red: {mittel_red} +/- {sigma_red}')
+print(f'Übersetzungskoeffizient: k= {k:.5f}')
 
 
 a_l_list        = []
@@ -236,8 +240,10 @@ std_b_l  = np.std(b_l_list, ddof=1)
 stat_b_l = std_b_l / np.sqrt(len(b_l_list))
 
 mean_chiq_dof_l = np.mean(chiq_dof_l_list)
+lamdba_grün = (k*2*mean_a_l)
 
 print(f'\nMittelwert a_l = ({mean_a_l:.5f} +/- {stat_a_l:.5f})')
 print(f'Mittelwert b_l = ({mean_b_l:.5f} +/- {stat_b_l:.5f})')
 print(f'Mean Chi2 / dof = {mean_chiq_dof_l:.5f}')
 print(f'Rauschmessung Green: {mittel_green} +/- {sigma_green}')
+print(f'Wellenlänge $\lambda$ vom Grünen Laser = {lamdba_grün*1e6:.2f}')
