@@ -11,6 +11,7 @@ OUTPUT.mkdir(exist_ok=True)
 DATA_noise_red   = [7.446, 7.443, 7.448, 7.443, 7.443, 7.443, 7.442, 7.443, 7.443, 7.442]
 DATA_noise_green = [7.487, 7.489, 7.483, 7.483, 7.483, 7.482, 7.482, 7.482, 7.487, 7.485]
 
+sigma_p = 1 / np.sqrt(12) 
 DATA_preasure_1 = [988, 872, 752, 615, 510, 418, 291]
 DATA_preasure_2 = [988, 864, 762, 640, 520, 402, 269]
 DATA_preasure_3 = [989, 868, 759, 632, 504, 391, 264]
@@ -144,7 +145,7 @@ ea_p_list       = []
 eb_p_list       = []
 chiq_dof_p_list = []
 for i, DATA in enumerate(DATA_kum_p):
-    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], 1, 'Preasure p [hPa]', 'Druck', i) # sigma ca = 8 ?? idk
+    a_p, b_p, ea_p, eb_p, chiq_dof_p, _ = DATA_analyse([DATA_preasure_m, DATA], sigma_p, 'Preasure p [hPa]', 'Druck', i) # sigma ca = 8 ?? idk
     
     print(f'\nFit {i+1}:')
     print(f'a = ({a_p:.4f} +/- {ea_p:.4f})')
