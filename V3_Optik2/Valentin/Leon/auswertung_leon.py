@@ -5,7 +5,7 @@ from praktikum import analyse
 from scipy.optimize import curve_fit
 from pathlib import Path
 
-OUTPUT = Path(r'V3_Optik2/Valentin/OutputDatein')
+OUTPUT = Path(r'V3_Optik2/Valentin/Leon/OutputDatein')
 OUTPUT.mkdir(exist_ok=True)
 
 DATA_noise_red   = [7.446, 7.443, 7.448, 7.443, 7.443, 7.443, 7.442, 7.443, 7.443, 7.442]
