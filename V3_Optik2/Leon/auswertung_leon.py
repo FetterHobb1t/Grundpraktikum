@@ -5,7 +5,7 @@ from praktikum import analyse
 from scipy.optimize import curve_fit
 from pathlib import Path
 
-OUTPUT = Path(r'V3_Optik2/Valentin/Leon/OutputDatein')
+OUTPUT = Path(r'V3_Optik2/Leon/OutputDatein')
 OUTPUT.mkdir(exist_ok=True)
 
 DATA_noise_red   = [7.446, 7.443, 7.448, 7.443, 7.443, 7.443, 7.442, 7.443, 7.443, 7.442]
@@ -159,8 +159,8 @@ def serie_auswerten(DATA_kum, m_werte, noise_sigma, y_label,titel_zusatz, datein
     stat_b = np.std(b_list, ddof=1)/np.sqrt(len(b_list))
     mean_chiq_dof = np.mean(chiq_dof_list)
     print(f'\n--- {titel_zusatz}: Mean over {len(a_list)} messurments ---')
-    print(f'Mean a = ({mean_a:.6f} +/- {stat_a:.6f})')
-    print(f'Mean b = ({mean_b:.4f} +/- {stat_b:.4f})')
+    print(f'Mean a = ({mean_a} +/- {stat_a}), sigma = {stat_a*np.sqrt(len(a_list))}')
+    print(f'Mean b = ({mean_b} +/- {stat_b})')
     print(f'Mean chi2/dof = {mean_chiq_dof:.4f}')
 
     return un.ufloat(mean_a, stat_a), un.ufloat(mean_b, stat_b), mean_chiq_dof
@@ -180,7 +180,7 @@ a_k, b_k, chiq_dof_k = serie_auswerten(
 )
 
 k = lamdba_rot / (2*a_k)
-print(f'\n |k| = ({abs(k.n):.6f} +/- {k.s:.6f})')
+print(f'\n |k| = ({abs(k.n)} +/- {k.s})')
 
 a_l, b_l, chiq_dof_l = serie_auswerten(
     DATA_kum_l, DATA_lambda_m, sigma_green, 's [mm]', 'Wellenlänge (grün)', 'Lambda'
