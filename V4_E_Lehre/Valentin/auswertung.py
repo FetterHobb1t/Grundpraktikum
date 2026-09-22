@@ -27,10 +27,25 @@ def Auswertung(DATEN, omegas, offsets, ax3, ax4, i):
     U_0  = messung.datenreihe('U_2').werte
     phi  = messung.datenreihe('&j_2').werte
     if i <= 4:
-        I = messung.datenreihe('I_2').werte
+        I = np.array(messung.datenreihe('I_2').werte)
     else:
         I = np.array(messung.datenreihe('I_2').werte) * 5 / 2
-        
+    
+    
+    i_max = np.argmax(I)
+    
+    f_0 = freq[i_max]
+    
+    halbwert = f_0 / np.sqrt(2)
+    
+    i_f_m = np.argmin(np.abs(I[:i_max] - halbwert))
+    i_f_p = np.argmin(np.abs(I[i_max:] - halbwert)) + 1 + i_max
+    
+    f_m = freq[i_f_m]
+    f_p = freq[i_f_p]
+    
+    Q = f_0 / (np.abs(f_m - f_p))
+    
     ax3.plot(freq, I, ls='', marker='o', label=f'{omegas[i-1]} $\Omega$')
 
     ax4.plot(freq, phi, ls='', marker='o', label=f'{omegas[i-1]} $\Omega$')
@@ -54,7 +69,8 @@ def Auswertung(DATEN, omegas, offsets, ax3, ax4, i):
     ax2.set_ylabel('Stromstärke $I$ [A]')
     
     fig.savefig(OUTPUT / f'Plot_{i}', dpi=200, bbox_inches='tight')
-    pass
+    
+    return f_0, Q
 
 
 fig2, ax3 = plt.subplots(
@@ -68,8 +84,12 @@ fig3, ax4 = plt.subplots(
 )
 
 for i in range(1,6):
-
-    Auswertung(DATEN, omegas, offsets, ax3, ax4, i)
+    print(f'\nAuswert {i} mit Widerstand R = {omegas[i-1]}')
+    
+    f_0, Q = Auswertung(DATEN, omegas, offsets, ax3, ax4, i)
+    
+    print(f'f_0    = {f_0}')
+    print(f'Güte Q = {Q}')
 
 ax3.axvline(f_0_erw, ls=':', label='$f_0$')
 ax3.set_ylabel('Stromstärke $I$ [A]')
