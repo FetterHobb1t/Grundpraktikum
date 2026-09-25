@@ -35,7 +35,7 @@ Lambda_Linien       ={
 
 def grad_bogenminuten_dezimal(grad, bogeminuten):
     return grad + bogeminuten/60
-def dezimal_zu_grad_bogenminuten(x, pos):
+def dezimal_zu_grad_bogenminuten(x, pos=None):
     grad = int(x)
     bogenminuten = round((x - grad) * 60)
     if bogenminuten == 60:
@@ -55,8 +55,8 @@ def rauschmessung (DATA,dateiname ='Rauschmessung', Name ='Person'):
 
     fig, ax = plt.subplots()
     ax.hist(DATA, label='Histogram der Rauschmessung', bins=bins, edgecolor='black', linewidth=1)
-    ax.axvline(mean, color='tab:red',ls='--', label=f'Mittelwert = {mean:.4f}')
-    ax.axvline(mean+std, color='tab:grey',ls='--', label=f'{mean:.4f}+-{std:.4f}')
+    ax.axvline(mean, color='tab:red',ls='--', label=f'Mittelwert = {dezimal_zu_grad_bogenminuten(mean)}')
+    ax.axvline(mean+std, color='tab:grey',ls='--', label=f'{dezimal_zu_grad_bogenminuten(mean)}+-{dezimal_zu_grad_bogenminuten(std)}')
     ax.axvline(mean-std, color='tab:grey',ls='--')
     ax.set_xlabel('Ablesewinkel [°]')
     ax.set_ylabel('Häufigkeit')
