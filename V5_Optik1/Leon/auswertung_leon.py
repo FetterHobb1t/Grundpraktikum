@@ -27,7 +27,7 @@ Lambda_Linien       ={
     'grün'      : 508.58,
     'hellblau1'  : 479.99,
     'hellblau2': 467.81,
-    'lila'      : 435.83,
+    'lila'      : 434.75,
     'dunkellila': 404.66
 
     }
@@ -39,8 +39,12 @@ Noise_Leon      = [grad_bogenminuten_dezimal(g,b) for g, b in Data_Noise_Leon]
 Noise_Valentin = np.array(Noise_Valentin)
 Noise_Leon = np.array(Noise_Leon)
 
-def rauschmessung (DATA, bins=25,dateiname ='Rauschmessung', Name ='Person'):
+def rauschmessung (DATA,dateiname ='Rauschmessung', Name ='Person'):
     mean, std = analyse.mittelwert_stdabw(DATA)
+
+    bin_width = 1/60  # 1 Bogenminute in Grad = maximale Schrittweite der Ablesung
+    bins = np.arange(DATA.min() - bin_width/2, DATA.max() + 1.5*bin_width, bin_width)
+
     fig, ax = plt.subplots()
     ax.hist(DATA, label='Histogram der Rauschmessung', bins=bins)
     ax.axvline(mean, color='tab:red',ls='--', label=f'Mittelwert = {mean:.4f}')
