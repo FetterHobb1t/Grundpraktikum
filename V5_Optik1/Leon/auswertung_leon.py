@@ -5,9 +5,8 @@ from praktikum import analyse
 from scipy.optimize import curve_fit
 from pathlib import Path
 import math
-
-#OUTPUT = Path(r'V5_Optik1/Leon/OutputDateien')
-#OUTPUT.mkdir(exist_ok=True)
+OUTPUT = Path(r'V5_Optik1/Leon/OutputDateien')
+OUTPUT.mkdir(exist_ok=True)
 
 Data_Noise_Valentin =[(308 ,25),(308 ,25),(308 ,27),(308 ,26),(308, 27),(308 ,28),(308 ,28),(308 ,27),(308 ,28),(308 ,30)]
 Data_Noise_Leon     =[(308 ,20),(308 ,22),(308 ,21),(308 ,21),(308 ,25),(308 ,23),(308 ,24),(308 ,23),(308 ,23),(308 ,23)]
@@ -40,7 +39,7 @@ Noise_Leon      = [grad_bogenminuten_dezimal(g,b) for g, b in Data_Noise_Leon]
 Noise_Valentin = np.array(Noise_Valentin)
 Noise_Leon = np.array(Noise_Leon)
 
-def rauschmessung (DATA, bins=25, Name ='Person'):
+def rauschmessung (DATA, bins=25,dateiname ='Rauschmessung', Name ='Person'):
     mean, std = analyse.mittelwert_stdabw(DATA)
     fig, ax = plt.subplots()
     ax.hist(DATA, label='Histogram der Rauschmessung', bins=bins)
@@ -52,10 +51,11 @@ def rauschmessung (DATA, bins=25, Name ='Person'):
     ax.set_title(f'Rauschmessung für Winkelablesung von {Name}')
     ax.legend()
     fig.tight_layout()
-    plt.show()
+    plt.savefig(OUTPUT/dateiname, dpi=150)
+    plt.close(fig)
     return mean, std
-V_mittel, V_std = rauschmessung(Noise_Valentin, Name='Valentin')
-L_mittel, L_std = rauschmessung(Noise_Leon, Name='Leon')
+V_mittel, V_std = rauschmessung(Noise_Valentin,dateiname='Rauschmessung_Valentin', Name='Valentin')
+L_mittel, L_std = rauschmessung(Noise_Leon,dateiname='Rauschmessung_Leon', Name='Leon')
 
 
 
@@ -73,11 +73,11 @@ def linien_auswertung(Data_Linien, epsilon):
         delta_rad = np.deg2rad(delta)
         n = np.sin((delta_rad + eps_rad)/2) / np.sin(eps_rad/2)
 
-        ergebnisse[farbe] {
+        ergebnisse[farbe] = {
             'psi1_mean': psi1_mean,
             'psi2_mean': psi2_mean,
             'delta': delta,
             'n': n
-           }
+        }
     return ergebnisse
 Ergebnisse_Linien = linien_auswertung(Data_Linien, epsilon = 60)
