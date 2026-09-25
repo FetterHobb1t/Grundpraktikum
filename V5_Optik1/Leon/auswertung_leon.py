@@ -4,7 +4,7 @@ import uncertainties as un
 from praktikum import analyse
 from scipy.optimize import curve_fit
 from pathlib import Path
-import math
+import uncertainties.umath as umath
 OUTPUT = Path(r'V5_Optik1/Leon/OutputDateien')
 OUTPUT.mkdir(exist_ok=True)
 
@@ -15,8 +15,8 @@ Data_Linien         ={
     'gelb'      : {'psi1':[(308, 58),(308, 54)],'psi2':[(212, 18),(212, 20)]},
     'grün-gelb' : {'psi1':[(309, 19),(309, 15)],'psi2':[(211, 58),(212,  0)]},
     'grün'      : {'psi1':[(309, 47),(309, 50)],'psi2':[(211, 28),(211, 29)]},
-    'hellblau'  : {'psi1':[(310, 14),(310, 10)],'psi2':[(211,  5),(211,  1)]},
-    'dunkelblau': {'psi1':[(310, 25),(310, 25)],'psi2':[(210, 53),(210, 51)]},
+    'hellblau1'  : {'psi1':[(310, 14),(310, 10)],'psi2':[(211,  5),(211,  1)]},
+    'hellblau2': {'psi1':[(310, 25),(310, 25)],'psi2':[(210, 53),(210, 51)]},
     'lila'      : {'psi1':[(311,  5),(311,  5)],'psi2':[(210, 11),(210, 12)]},
     'dunkellila': {'psi1':[(312,  0),(311, 57)],'psi2':[(209, 12),(209, 11)]}
 }
@@ -25,10 +25,10 @@ Lambda_Linien       ={
     'gelb'      : 579.07,
     'grün-gelb' : 546.07,
     'grün'      : 508.58,
-    'hellblau'  : 479.99,
-    'dunkelblau': 467.81,
+    'hellblau1'  : 479.99,
+    'hellblau2': 467.81,
     'lila'      : 435.83,
-    'dunke-lila': 404.66
+    'dunkellila': 404.66
 
     }
 
@@ -59,19 +59,27 @@ L_mittel, L_std = rauschmessung(Noise_Leon,dateiname='Rauschmessung_Leon', Name=
 
 
 
-def linien_auswertung(Data_Linien, epsilon):
+def linien_auswertung(Data_Linien,V_std,L_std, epsilon):
     ergebnisse = {}
     eps_rad = np.deg2rad(epsilon)
     for farbe, d in Data_Linien.items():
         psi1_dec = [grad_bogenminuten_dezimal(g,b) for g, b in d['psi1']]
         psi2_dec = [grad_bogenminuten_dezimal(g,b) for g, b in d['psi2']]
 
-        psi1_mean = np.mean(psi1_dec)
-        psi2_mean = np.mean(psi2_dec)
-        delta = (psi1_mean - psi2_mean)/2
+        psi1_V = un.ufloat(psi1_dec[0],V_std)
+        psi2_V = un.ufloat(psi2_dec[0],V_std)
+        psi1_L = un.ufloat(psi1_dec[1],L_std)
+        psi2_L = un.ufloat(psi2_dec[1],L_std)
+        
+    
 
-        delta_rad = np.deg2rad(delta)
-        n = np.sin((delta_rad + eps_rad)/2) / np.sin(eps_rad/2)
+        psi1_mean = (psi1_V + psi1_L)/2
+        psi2_mean = (psi2_V + psi2_L)/2
+
+        delta = (psi1_mean - psi2_mean)/2
+        delta_rad = delta * np.pi/180
+
+        n = umath.sin((delta_rad + eps_rad)/2) / np.sin(eps_rad/2)
 
         ergebnisse[farbe] = {
             'psi1_mean': psi1_mean,
@@ -80,4 +88,49 @@ def linien_auswertung(Data_Linien, epsilon):
             'n': n
         }
     return ergebnisse
-Ergebnisse_Linien = linien_auswertung(Data_Linien, epsilon = 60)
+Ergebnisse_Linien = linien_auswertung(Data_Linien, V_std, L_std, epsilon = 60)
+
+farben  = list(Ergebnisse_Linien.keys())
+lam_arr = np.array([Lambda_Linien[f] for f in farben])
+n_nom   = np.array([Ergebnisse_Linien[f]['n'].nominal_value for f in farben])
+n_err   = np.array([Ergebnisse_Linien[f]['n'].std_dev       for f in farben])
+
+def fit_cauchy(lam, c0, c2, c4):
+    return c0 + c2/lam**2 +c4/lam**4
+popt, pcov = curve_fit(fit_cauchy, lam_arr, n_nom, sigma=n_err, absolute_sigma=True, p0=[1.6,1e4,1e9])
+perr = np.sqrt(np.diag(pcov))
+c0,c2,c4 = popt
+
+fit_werte = fit_cauchy(lam_arr, *popt)
+residuals = n_nom - fit_werte
+chiq_dof = np.sum((residuals/n_err)**2)/(len(lam_arr)-len(popt))
+
+
+print(f'\nc0 = {c0:.6f} +/- {perr[0]:.6f}')
+print(f'c2 = {c2:.2f} +/- {perr[1]:.2f}')
+print(f'c4 = {c4:.4e} +/- {perr[2]:.4e}')
+print(f'Chi2/dof = {chiq_dof:.4f}')
+
+lam_fein = np.linspace(lam_arr.min() - 20, lam_arr.max() + 20, 500)
+
+fig, [ax, rs] = plt.subplots(2, figsize=(10, 7), constrained_layout=True)
+
+ax.errorbar(lam_arr, n_nom, yerr=n_err, fmt='o', capsize=3,
+            color='tab:blue', label='Messwerte')
+ax.plot(lam_fein, fit_cauchy(lam_fein, *popt), color='tab:orange', lw=2,
+        label='Cauchy-Fit')
+ax.set_xlabel(r'$\lambda$ [nm]')
+ax.set_ylabel('n')
+ax.set_title(r'Dispersionskurve n($\lambda$)')
+ax.legend(loc='upper right')
+
+rs.errorbar(lam_arr, residuals, yerr=n_err, fmt='o', capsize=3,
+            color='tab:blue', label='Residuen')
+rs.axhline(0, color='tab:orange', lw=2)
+rs.set_xlabel(r'$\lambda$ [nm]')
+rs.set_ylabel('Residuen')
+rs.grid(True, alpha=0.3)
+rs.legend(loc='upper right')
+
+fig.savefig(OUTPUT / 'Dispersionskurve.png', dpi=200, bbox_inches='tight')
+plt.close(fig)
