@@ -5,6 +5,7 @@ from praktikum import analyse
 from scipy.optimize import curve_fit
 from pathlib import Path
 import uncertainties.umath as umath
+import matplotlib.ticker as ticker
 OUTPUT = Path(r'V5_Optik1/Leon/OutputDateien')
 OUTPUT.mkdir(exist_ok=True)
 
@@ -34,6 +35,13 @@ Lambda_Linien       ={
 
 def grad_bogenminuten_dezimal(grad, bogeminuten):
     return grad + bogeminuten/60
+def dezimal_zu_grad_bogenminuten(x, pos):
+    grad = int(x)
+    bogenminuten = round((x - grad) * 60)
+    if bogenminuten == 60:
+        grad += 1
+        bogenminuten = 0
+    return f"{grad}°{bogenminuten:02d}'"
 Noise_Valentin  = [grad_bogenminuten_dezimal(g,b) for g, b in Data_Noise_Valentin]
 Noise_Leon      = [grad_bogenminuten_dezimal(g,b) for g, b in Data_Noise_Leon]
 Noise_Valentin = np.array(Noise_Valentin)
@@ -53,7 +61,10 @@ def rauschmessung (DATA,dateiname ='Rauschmessung', Name ='Person'):
     ax.set_xlabel('Ablesewinkel [°]')
     ax.set_ylabel('Häufigkeit')
     ax.set_title(f'Rauschmessung für Winkelablesung von {Name}')
-    ax.ticklabel_format(useOffset=False, style='plain', axis='x')
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(bin_width))
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(dezimal_zu_grad_bogenminuten))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+    
     ax.legend()
     fig.tight_layout()
     plt.savefig(OUTPUT/dateiname, dpi=150)
