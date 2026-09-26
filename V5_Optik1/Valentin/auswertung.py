@@ -18,6 +18,7 @@ import uncertainties.umath as umath
 from scipy.optimize import curve_fit
 from scipy.stats import chi2 as chi2_dist
 from pathlib import Path
+from praktikum.literaturwerte import n_schott_f2, n_schott_nsf10
 
 OUTPUT = Path(r'V5_Optik1/Valentin/OutputDateien')
 OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -55,8 +56,7 @@ Lambda_Linien = {
 }
 
 # Schlitzblenden-Messung zum Aufloesungsvermoegen (gelbe Hg-Doppellinie)
-# !!! Hier eure Messwerte eintragen (in mm) !!!
-SPALT_NOCH_AUFGELOEST_MM = 2.5     # kleinste Blendenbreite, bei der die Doppellinie noch getrennt war
+SPALT_NOCH_AUFGELOEST_MM  = 2.5    # kleinste Blendenbreite, bei der die Doppellinie noch getrennt war
 SPALT_NICHT_AUFGELOEST_MM = 2      # groesste Blendenbreite, bei der sie nicht mehr getrennt war
 
 
@@ -192,20 +192,8 @@ print('\nFehlerbeitraege zu n (gelb):')
 for var, beitrag in Erg['gelb']['n'].error_components().items():
     print(f'   {var.tag:18s}: {beitrag:.2e}')
 
-# LaTeX-Tabelle der Ergebnisse
-with open(OUTPUT / 'tabelle_brechungsindex.tex', 'w', encoding='utf-8') as fh:
-    for f in farben:
-        e = Erg[f]
-        fh.write(f"{f.capitalize()} & \\num{{{Lambda_Linien[f]:.2f}}} & "
-                 f"\\num{{{e['delta_V'].nominal_value:.3f} +- {e['delta_V'].std_dev:.3f}}} & "
-                 f"\\num{{{e['delta_L'].nominal_value:.3f} +- {e['delta_L'].std_dev:.3f}}} & "
-                 f"\\num{{{e['n_V'].nominal_value:.5f} +- {e['n_V'].std_dev:.5f}}} & "
-                 f"\\num{{{e['n_L'].nominal_value:.5f} +- {e['n_L'].std_dev:.5f}}} & "
-                 f"\\num{{{e['n'].nominal_value:.5f} +- {e['n'].std_dev:.5f}}} \\\\\n")
-
-
 # ---------------------------------------------------------------------------
-# Anpassung: vereinfachte Sellmeier-Formel = Cauchy-Formel (Glg. 6.13)
+# Anpassung: vereinfachte Sellmeier-Formel = Cauchy-Formel
 # lambda in Mikrometer -> gut konditionierte Parameter
 # ---------------------------------------------------------------------------
 lam_um = lam_arr / 1000
@@ -252,22 +240,41 @@ print(f'chi2/ndof = {chi2_2:.2f}/{ndof2} = {chi2_2 / ndof2:.2f},  p = {chi2_dist
 
 lam_fein = np.linspace(0.39, 0.66, 500)
 
-fig, (ax, rs) = plt.subplots(2, figsize=(9, 7), sharex=True, constrained_layout=True,
-                             gridspec_kw={'height_ratios': [2.2, 1]})
-ax.errorbar(lam_arr, n_nom, yerr=n_err, fmt='o', capsize=3, color='black', zorder=3,
-            label='Messwerte (gewichtetes Mittel V/L)')
-ax.plot(lam_fein * 1000, cauchy3(lam_fein, *popt3), color='tab:blue', lw=2,
-        label=f'Cauchy-Fit $c_0+c_2/\\lambda^2+c_4/\\lambda^4$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_3:.1f}/{ndof3}')
-ax.plot(lam_fein * 1000, cauchy2(lam_fein, *popt2), color='tab:orange', lw=1.5, ls='--',
-        label=f'Cauchy-Fit $c_0+c_2/\\lambda^2$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_2:.1f}/{ndof2}')
+fig, (ax, rs) = plt.subplots(
+    2,
+    figsize=(9, 7),
+    sharex=True,
+    constrained_layout=True,
+    gridspec_kw={'height_ratios': [2.2, 1]}
+)
+ax.errorbar(
+    lam_arr,
+    n_nom, yerr=n_err,
+    fmt='o', capsize=3,
+    color='black', zorder=3,
+    label='Messwerte (gewichtetes Mittel V/L)'
+    )
+ax.plot(
+    lam_fein * 1000,
+    cauchy3(lam_fein, *popt3),
+    color='tab:blue', lw=2,
+    label=f'Cauchy-Fit $c_0+c_2/\\lambda^2+c_4/\\lambda^4$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_3:.1f}/{ndof3}'
+    )
+ax.plot(
+    lam_fein * 1000,
+    cauchy2(lam_fein, *popt2),
+    color='tab:orange',
+    lw=1.5,
+    ls='--',
+    label=f'Cauchy-Fit $c_0+c_2/\\lambda^2$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_2:.1f}/{ndof2}'
+    )
 ax.set_ylabel('Brechungsindex $n$')
 ax.set_title('Dispersionskurve $n(\\lambda)$ des Prismas')
 ax.grid(alpha=0.3)
 ax.legend()
 
 rs.errorbar(lam_arr, res3, yerr=n_err, fmt='o', capsize=3, color='tab:blue', label='3-Parameter-Fit')
-rs.errorbar(lam_arr + 3, res2, yerr=n_err, fmt='s', capsize=3, color='tab:orange', mfc='none',
-            label='2-Parameter-Fit (um +3 nm versetzt)')
+rs.errorbar(lam_arr + 3, res2, yerr=n_err, fmt='s', capsize=3, color='tab:orange', mfc='none', label='2-Parameter-Fit (um +3 nm versetzt)')
 rs.axhline(0, color='grey', lw=1)
 rs.set_xlabel('Wellenlänge $\\lambda$ [nm]')
 rs.set_ylabel('$n - n_\\mathrm{fit}$')
@@ -280,35 +287,27 @@ plt.close(fig)
 # ---------------------------------------------------------------------------
 # Vergleich mit Herstellerangaben (SCHOTT-Sellmeier-Koeffizienten, lambda in um)
 # ---------------------------------------------------------------------------
-SCHOTT = {
-    'F2':     (1.34533359, 0.209073176, 0.937357162, 0.00997743871, 0.0470450767, 111.886764),
-    'N-BK7':  (1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653),
-    'N-SF10': (1.62153902, 0.256287842, 1.64447552, 0.0122241457, 0.0595736775, 147.468793),
-}
 
+n_F2_kat = np.array(n_schott_f2(lam_um))
+n_nsf10_kat = np.array(n_schott_nsf10(lam_um))
 
-def sellmeier(lam, B1, B2, B3, C1, C2, C3):
-    l2 = lam**2
-    return np.sqrt(1 + B1 * l2 / (l2 - C1) + B2 * l2 / (l2 - C2) + B3 * l2 / (l2 - C3))
+chi2_F2_kat = np.sum(((n_nom - n_F2_kat) / n_err)**2)
+chi2_nsf10_kat = np.sum(((n_nom - n_nsf10_kat) / n_err)**2)
 
+print(f'{'F2':7s}: mittlere Abweichung n_mess - n_kat = {np.mean(n_nom - n_F2_kat):+.5f},  '
+          f'chi2/ndof = {chi2_F2_kat:.1f}/{len(lam_um)}')
+print(f'{'N-SF10':7s}: mittlere Abweichung n_mess - n_kat = {np.mean(n_nom - n_nsf10_kat):+.5f},  '
+          f'chi2/ndof = {chi2_nsf10_kat:.1f}/{len(lam_um)}')
 
-print('\n=== Vergleich mit Herstellerangaben (SCHOTT) ===')
-for glas, koeff in SCHOTT.items():
-    n_kat = sellmeier(lam_um, *koeff)
-    chi2_kat = np.sum(((n_nom - n_kat) / n_err)**2)
-    print(f'{glas:7s}: mittlere Abweichung n_mess - n_kat = {np.mean(n_nom - n_kat):+.5f},  '
-          f'chi2/ndof = {chi2_kat:.1f}/{len(lam_um)}')
-
-n_F2 = sellmeier(lam_um, *SCHOTT['F2'])
 print('\nLinie        n_mess               n_F2       Abw.     Abw./sigma')
-for f, nm, ne, nk in zip(farben, n_nom, n_err, n_F2):
+for f, nm, ne, nk in zip(farben, n_nom, n_err, n_F2_kat):
     print(f'{f:11s} {nm:.5f}+/-{ne:.5f}  {nk:.5f}  {nm - nk:+.5f}  {(nm - nk) / ne:+.2f}')
 
 # gemeinsamer Offset zu F2 (1 Parameter) als Test auf systematische Verschiebung
 w = 1 / n_err**2
-offset = np.sum(w * (n_nom - n_F2)) / np.sum(w)
+offset = np.sum(w * (n_nom - n_F2_kat)) / np.sum(w)
 offset_err = 1 / np.sqrt(np.sum(w))
-chi2_off = np.sum(((n_nom - n_F2 - offset) / n_err)**2)
+chi2_off = np.sum(((n_nom - n_F2_kat - offset) / n_err)**2)
 print(f'Konstanter Offset zu F2: {offset:+.5f} +/- {offset_err:.5f},  '
       f'chi2 nach Offset = {chi2_off:.1f}/{len(lam_um) - 1}')
 
@@ -321,10 +320,10 @@ def n_von_eps(delta_deg, eps_deg):
     return np.sin(np.deg2rad(delta_deg + eps_deg) / 2) / np.sin(np.deg2rad(eps_deg) / 2)
 
 
-popt_eps, pcov_eps = curve_fit(lambda d, e: n_von_eps(d, e), delta_nom, n_F2, p0=[60.0],
+popt_eps, pcov_eps = curve_fit(lambda d, e: n_von_eps(d, e), delta_nom, n_F2_kat, p0=[60.0],
                                sigma=n_err, absolute_sigma=True)
 eps_fit = un.ufloat(popt_eps[0], np.sqrt(pcov_eps[0, 0]))
-chi2_eps = np.sum(((n_von_eps(delta_nom, popt_eps[0]) - n_F2) / n_err)**2)
+chi2_eps = np.sum(((n_von_eps(delta_nom, popt_eps[0]) - n_F2_kat) / n_err)**2)
 print(f"epsilon, das Messung und F2 zur Deckung bringt: {eps_fit} deg "
       f"= 60° {(eps_fit.nominal_value - 60) * 60:+.1f}',  chi2 = {chi2_eps:.1f}/{len(lam_um) - 1}")
 
@@ -333,29 +332,44 @@ lam_CdF = {'C': 0.6563, 'd': 0.5876, 'F': 0.4861, 'D (589,3)': 0.5893}
 n_fit_at = {k: c0_ + c2_ / l**2 + c4_ / l**4
             for k, l in lam_CdF.items() for c0_, c2_, c4_ in [par3]}
 abbe_fit = (n_fit_at['d'] - 1) / (n_fit_at['F'] - n_fit_at['C'])
-n_F2_at = {k: sellmeier(l, *SCHOTT['F2']) for k, l in lam_CdF.items()}
+n_F2_at = {k: n_schott_f2(l) for k, l in lam_CdF.items()}
 abbe_F2 = (n_F2_at['d'] - 1) / (n_F2_at['F'] - n_F2_at['C'])
 print('\nLinie      n_fit                 n_F2')
 for k in lam_CdF:
     print(f'{k:10s} {fmt_u(n_fit_at[k])}   {n_F2_at[k]:.5f}')
 print(f'Abbe-Zahl nu_d: Fit = {abbe_fit:.2f},  F2 = {abbe_F2:.2f}')
 
-fig, (ax, rs) = plt.subplots(2, figsize=(9, 7), sharex=True, constrained_layout=True,
-                             gridspec_kw={'height_ratios': [2.2, 1]})
-farben_glas = {'F2': 'tab:green', 'N-BK7': 'tab:purple', 'N-SF10': 'tab:red'}
+fig, (ax, rs) = plt.subplots(
+    2,
+    figsize=(9, 7),
+    sharex=True,
+    constrained_layout=True,
+    gridspec_kw={'height_ratios': [2.2, 1]}
+    )
 ax.errorbar(lam_arr, n_nom, yerr=n_err, fmt='o', capsize=3, color='black', zorder=3, label='Messwerte')
-for glas, koeff in SCHOTT.items():
-    ax.plot(lam_fein * 1000, sellmeier(lam_fein, *koeff), color=farben_glas[glas], lw=1.8,
-            label=f'SCHOTT {glas} (Herstellerangabe)')
+ax.plot(lam_fein * 1000,
+        n_schott_f2(lam_fein),
+        color='tab:green',
+        lw=1.8,
+        label='SCHOTT F2 (Literaturwert)'
+        )
+ax.plot(lam_fein * 1000,
+        n_schott_nsf10(lam_fein),
+        color='tab:red',
+        lw=1.8,
+        label='SCHOTT N_SF10 (Herstellerangabe)'
+        )
 ax.set_ylabel('Brechungsindex $n$')
-ax.set_title('Vergleich mit Herstellerangaben')
+ax.set_title('Vergleich mit Literaturwerten')
 ax.grid(alpha=0.3)
 ax.legend()
 
-rs.errorbar(lam_arr, n_nom - n_F2, yerr=n_err, fmt='o', capsize=3, color='black', label='$n_\\mathrm{mess}-n_\\mathrm{F2}$')
-rs.plot(lam_fein * 1000, cauchy3(lam_fein, *popt3) - sellmeier(lam_fein, *SCHOTT['F2']),
-        color='tab:blue', label='Cauchy-Fit $-$ F2')
-rs.axhline(0, color='tab:green', lw=1.5)
+rs.errorbar(lam_arr, n_nom - n_F2_kat, yerr=n_err, fmt='o', capsize=3, color='black', label='$n_\\mathrm{mess}-n_\\mathrm{F2}$')
+rs.plot(lam_fein * 1000,
+        cauchy3(lam_fein, *popt3) - n_schott_f2(lam_fein),
+        color='tab:blue',
+        label='Cauchy-Fit $-$ F2 (Literaturwert)'
+        )
 rs.set_xlabel('Wellenlänge $\\lambda$ [nm]')
 rs.set_ylabel('$n - n_\\mathrm{F2}$')
 rs.grid(alpha=0.3)
@@ -370,7 +384,7 @@ plt.close(fig)
 lam1, lam2 = 576.96, 579.07                 # nm
 lam_m = (lam1 + lam2) / 2
 dlam = lam2 - lam1
-A_noetig = lam_m / dlam                      # Glg. 6.10: benoetigtes Aufloesungsvermoegen
+A_noetig = lam_m / dlam                      
 
 # Dispersion dn/dlambda bei lam_m aus dem Fit (korrelierte Parameter!)
 c0, c2, c4 = par3
@@ -396,34 +410,30 @@ print(f'erwartete Grenz-Buendelbreite d = {d_grenz_erwartet_nm / 1e6:.3f} mm')
 A_pro_mm = -dn_dlam * geo * 1e6
 print(f'A(d) = {A_pro_mm:.1f} * d/mm')
 
-if SPALT_NOCH_AUFGELOEST_MM is not None and SPALT_NICHT_AUFGELOEST_MM is not None:
-    b1, b2 = SPALT_NICHT_AUFGELOEST_MM, SPALT_NOCH_AUFGELOEST_MM
-    # Grenzbreite liegt irgendwo im Intervall [b1, b2] -> Gleichverteilung
-    d_grenz = un.ufloat((b1 + b2) / 2, (b2 - b1) / np.sqrt(12), tag='Blendenbreite')
-    A_exp = A_pro_mm * d_grenz
-    abw = (A_exp - A_noetig)
-    print(f'gemessene Grenzbreite d = {d_grenz} mm')
-    print(f'experimentelles Aufloesungsvermoegen A = {A_exp}')
-    print(f'Vergleich mit lambda/dlambda = {A_noetig:.1f}: Abweichung {abw.nominal_value:.1f} '
-          f'= {abw.nominal_value / abw.std_dev:.1f} sigma')
-    for var, beitrag in A_exp.error_components().items():
-        if beitrag > 0.05:
-            print(f'   Beitrag {var.tag}: {beitrag:.2f}')
-else:
-    print('-> Blendenbreiten SPALT_NOCH_AUFGELOEST_MM / SPALT_NICHT_AUFGELOEST_MM oben eintragen!')
+b1, b2 = SPALT_NICHT_AUFGELOEST_MM, SPALT_NOCH_AUFGELOEST_MM
+# Grenzbreite liegt irgendwo im Intervall [b1, b2] -> Gleichverteilung
+d_grenz = un.ufloat((b1 + b2) / 2, (b2 - b1) / np.sqrt(12), tag='Blendenbreite')
+A_exp = A_pro_mm * d_grenz
+abw = (A_exp - A_noetig)
+print(f'gemessene Grenzbreite d = {d_grenz} mm')
+print(f'experimentelles Aufloesungsvermoegen A = {A_exp}')
+print(f'Vergleich mit lambda/dlambda = {A_noetig:.1f}: Abweichung {abw.nominal_value:.1f} '
+        f'= {abw.nominal_value / abw.std_dev:.1f} sigma')
+for var, beitrag in A_exp.error_components().items():
+    if beitrag > 0.05:
+        print(f'   Beitrag {var.tag}: {beitrag:.2f}')
 
 # Plot A(d) mit Erwartung
 fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
 d_ax = np.linspace(0, 6, 200)
 A_nom = A_pro_mm.nominal_value * d_ax
 A_sig = A_pro_mm.std_dev * d_ax
-ax.plot(d_ax, A_nom, color='tab:blue', label='$A(d)$ nach Glg. (6.14) mit Fit-Dispersion')
+ax.plot(d_ax, A_nom, color='tab:blue', label='$A(d)$ mit Fit-Dispersion')
 ax.fill_between(d_ax, A_nom - A_sig, A_nom + A_sig, color='tab:blue', alpha=0.25)
 ax.axhline(A_noetig, color='tab:red', ls='--',
            label=f'$\\lambda/\\Delta\\lambda$ = {A_noetig:.0f} (gelbe Hg-Doppellinie)')
-if SPALT_NOCH_AUFGELOEST_MM is not None and SPALT_NICHT_AUFGELOEST_MM is not None:
-    ax.axvspan(SPALT_NICHT_AUFGELOEST_MM, SPALT_NOCH_AUFGELOEST_MM, color='tab:green', alpha=0.3,
-               label='gemessene Grenzbreite')
+ax.axvspan(SPALT_NICHT_AUFGELOEST_MM, SPALT_NOCH_AUFGELOEST_MM, color='tab:green', alpha=0.3,
+            label='gemessene Grenzbreite')
 ax.set_xlabel('Bündelbreite $d$ [mm]')
 ax.set_ylabel('Auflösungsvermögen $A$')
 ax.grid(alpha=0.3)
