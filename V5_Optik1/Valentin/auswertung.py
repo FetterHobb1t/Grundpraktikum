@@ -39,7 +39,7 @@ Lambda_Linien = {
     'grün':       508.58,   # Cd
     'hellblau':   479.99,   # Cd
     'dunkelblau': 467.81,   # Cd
-    'lila':       435.83,   # Hg (starke violette Linie; 434.75 nm ist nur schwach)
+    'lila':       435.83,   # Hg
     'dunkellila': 404.66,   # Hg
 }
 
