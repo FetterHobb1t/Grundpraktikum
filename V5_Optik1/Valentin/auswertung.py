@@ -303,17 +303,14 @@ chi2_eps = np.sum(((n_von_eps(delta_nom, popt_eps[0]) - n_F2_kat) / n_err)**2)
 print(f"epsilon, das Messung und F2 zur Deckung bringt: {eps_fit} deg "
       f"= 60° {(eps_fit.nominal_value - 60) * 60:+.1f}',  chi2 = {chi2_eps:.1f}/{len(lam_um) - 1}")
 
-# Kennzahlen aus dem Fit im Vergleich zu F2: n bei den Fraunhofer-Linien C, d, F und Abbe-Zahl
+# Kennzahlen aus dem Fit im Vergleich zu F2: n bei den Fraunhofer-Linien C, d, F
 lam_CdF = {'C': 0.6563, 'd': 0.5876, 'F': 0.4861, 'D (589,3)': 0.5893}
 n_fit_at = {k: c0_ + c2_ / l**2 + c4_ / l**4
             for k, l in lam_CdF.items() for c0_, c2_, c4_ in [par3]}
-abbe_fit = (n_fit_at['d'] - 1) / (n_fit_at['F'] - n_fit_at['C'])
 n_F2_at = {k: n_schott_f2(l) for k, l in lam_CdF.items()}
-abbe_F2 = (n_F2_at['d'] - 1) / (n_F2_at['F'] - n_F2_at['C'])
 print('\nLinie      n_fit                 n_F2')
 for k in lam_CdF:
     print(f'{k:10s} {fmt_u(n_fit_at[k])}   {n_F2_at[k]:.5f}')
-print(f'Abbe-Zahl nu_d: Fit = {abbe_fit:.2f},  F2 = {abbe_F2:.2f}')
 
 fig, (ax, rs) = plt.subplots(
     2,
