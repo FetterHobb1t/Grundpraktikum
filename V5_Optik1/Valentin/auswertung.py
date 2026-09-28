@@ -1,15 +1,3 @@
-"""
-Auswertung Versuch Optik I: Prismenspektrometer
-Gruppe B1 -- Leon Ehrhard, Valentin Aurich
-
-Unsicherheiten werden durchgehend mit dem Paket `uncertainties` propagiert.
-Jede einzelne Winkelablesung ist eine eigene (unabhaengige) Zufallsvariable,
-deren Unsicherheit die Standardabweichung aus der Rauschmessung DER PERSON ist,
-die den Winkel abgelesen hat (Valentin -> sigma_V, Leon -> sigma_L).
-Aus den beiden unabhaengigen Messreihen ergibt sich pro Linie ein n_V und ein n_L,
-die zu einem gewichteten Mittelwert n (mit Unsicherheit auf den Mittelwert)
-zusammengefasst werden.
-"""
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
@@ -43,7 +31,7 @@ Data_Linien = {
     'dunkellila': {'psi1': [(312,  0), (311, 57)], 'psi2': [(209, 12), (209, 11)]},
 }
 
-# Wellenlaengen der HgCd-Lampe in nm (Tabelle 6.2 der Anleitung)
+# Wellenlaengen der HgCd-Lampe in nm
 Lambda_Linien = {
     'rot':        643.85,   # Cd
     'gelb':       579.07,   # Hg (laengerwelliger Teil der gelben Doppellinie)
@@ -55,10 +43,8 @@ Lambda_Linien = {
     'dunkellila': 404.66,   # Hg
 }
 
-# Schlitzblenden-Messung zum Aufloesungsvermoegen (gelbe Hg-Doppellinie)
-SPALT_NOCH_AUFGELOEST_MM  = 2.5    # kleinste Blendenbreite, bei der die Doppellinie noch getrennt war
-SPALT_NICHT_AUFGELOEST_MM = 2      # groesste Blendenbreite, bei der sie nicht mehr getrennt war
-
+SPALT_NOCH_AUFGELOEST_MM  = 2.5    
+SPALT_NICHT_AUFGELOEST_MM = 2      
 
 def grad_bogenminuten_dezimal(grad, bogenminuten):
     return grad + bogenminuten / 60
@@ -82,9 +68,6 @@ def fmt_u(x, stellen=5):
     return f'{x.nominal_value:.{stellen}f} +/- {x.std_dev:.{stellen}f}'
 
 
-# ---------------------------------------------------------------------------
-# Aufgabe 1: Rauschmessung
-# ---------------------------------------------------------------------------
 Noise_Valentin = np.array([grad_bogenminuten_dezimal(g, b) for g, b in Data_Noise_Valentin])
 Noise_Leon     = np.array([grad_bogenminuten_dezimal(g, b) for g, b in Data_Noise_Leon])
 
@@ -97,10 +80,20 @@ def rauschmessung(DATA, dateiname='Rauschmessung', Name='Person'):
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.hist(DATA, bins=bins, edgecolor='black', linewidth=1, label='Rauschmessung')
-    ax.axvline(mean, color='tab:red', ls='--',
-               label=f"Mittelwert = {int(mean)}°{(mean - int(mean)) * 60:.1f}'")
-    ax.axvspan(mean - std, mean + std, color='tab:grey', alpha=0.25, zorder=0,
-               label=f"$\\pm\\sigma$ = $\\pm${std * 60:.2f}'")
+    ax.axvline(
+        mean,
+        color='tab:red',
+        ls='--',
+        label=f"Mittelwert = {int(mean)}°{(mean - int(mean)) * 60:.1f}'"
+        )
+    ax.axvspan(
+        mean - std,
+        mean + std,
+        color='tab:grey',
+        alpha=0.25,
+        zorder=0,
+        label=f"$\\pm\\sigma$ = $\\pm${std * 60:.2f}'"
+        )
     ax.set_xlabel('Ablesewinkel $\\psi$')
     ax.set_ylabel('Häufigkeit')
     ax.set_title(f'Rauschmessung der Winkelablesung ({Name})')
@@ -126,13 +119,10 @@ for name, m, s in [('Valentin', V_mittel, V_std), ('Leon', L_mittel, L_std)]:
           f"sigma_Mittelwert = {s * 60 / np.sqrt(N_noise):.3f}'")
 diff_mittel = (V_mittel - L_mittel) * 60
 sig_diff = np.sqrt(V_std**2 + L_std**2) * 60 / np.sqrt(N_noise)
-print(f"Differenz der Mittelwerte V-L = {diff_mittel:.2f}' +/- {sig_diff:.2f}'  "
-      f"({diff_mittel / sig_diff:.1f} sigma)")
+print(f"Differenz der Mittelwerte V-L = {diff_mittel:.2f}' +/- {sig_diff:.2f}'  ")
+print(f"({diff_mittel / sig_diff:.1f} sigma)")
 
 
-# ---------------------------------------------------------------------------
-# Aufgabe 2: Brechungsindex pro Linie
-# ---------------------------------------------------------------------------
 def brechungsindex(psi1, psi2):
     delta = (psi1 - psi2) / 2
     n = umath.sin((umath.radians(delta) + EPS_RAD) / 2) / np.sin(EPS_RAD / 2)
@@ -145,7 +135,6 @@ def linien_auswertung(Data_Linien, V_std, L_std):
         psi1_dec = [grad_bogenminuten_dezimal(g, b) for g, b in d['psi1']]
         psi2_dec = [grad_bogenminuten_dezimal(g, b) for g, b in d['psi2']]
 
-        # jede Ablesung ist eine eigene Zufallsvariable mit der sigma der ablesenden Person
         psi1_V = un.ufloat(psi1_dec[0], V_std, tag=f'psi1_V {farbe}')
         psi2_V = un.ufloat(psi2_dec[0], V_std, tag=f'psi2_V {farbe}')
         psi1_L = un.ufloat(psi1_dec[1], L_std, tag=f'psi1_L {farbe}')
@@ -154,18 +143,17 @@ def linien_auswertung(Data_Linien, V_std, L_std):
         delta_V, n_V = brechungsindex(psi1_V, psi2_V)
         delta_L, n_L = brechungsindex(psi1_L, psi2_L)
 
-        # gewichteter Mittelwert der beiden unabhaengigen Messungen
+        # gewichteter Mittelwert der beiden unabhängigen Messungen
         w_V = 1 / n_V.std_dev**2
         w_L = 1 / n_L.std_dev**2
         n_mean = (w_V * n_V + w_L * n_L) / (w_V + w_L)
         delta_mean = (w_V * delta_V + w_L * delta_L) / (w_V + w_L)
 
-        # Vertraeglichkeit der beiden Messungen
+        # Verträglichkeit der beiden Messungen
         diff = n_V - n_L
         pull = diff.nominal_value / diff.std_dev
 
-        ergebnisse[farbe] = dict(delta_V=delta_V, delta_L=delta_L, delta=delta_mean,
-                                 n_V=n_V, n_L=n_L, n=n_mean, pull=pull)
+        ergebnisse[farbe] = dict(delta_V=delta_V, delta_L=delta_L, delta=delta_mean, n_V=n_V, n_L=n_L, n=n_mean, pull=pull)
     return ergebnisse
 
 
@@ -180,32 +168,25 @@ print('\n=== Brechungsindizes ===')
 print(f"{'Linie':11s} {'lam/nm':>7s} {'delta_V':>12s} {'delta_L':>12s} {'n_V':>18s} {'n_L':>18s} {'n (Mittel)':>18s} {'pull':>6s}")
 for f in farben:
     e = Erg[f]
-    print(f"{f:11s} {Lambda_Linien[f]:7.2f} {e['delta_V'].nominal_value:8.4f}±{e['delta_V'].std_dev:.4f}"
+    print(f"{f:11s} {Lambda_Linien[f]:7.2f} {e['delta_V'].nominal_value:8.4f}±{e['delta_V'].std_dev:.4f}" 
           f" {e['delta_L'].nominal_value:8.4f}±{e['delta_L'].std_dev:.4f}"
           f" {fmt_u(e['n_V'])} {fmt_u(e['n_L'])} {fmt_u(e['n'])} {e['pull']:6.2f}")
 chi2_VL = sum(Erg[f]['pull']**2 for f in farben)
 print(f"Vertraeglichkeit V/L: chi2 = {chi2_VL:.2f} bei {len(farben)} Freiheitsgraden, "
       f"p = {chi2_dist.sf(chi2_VL, len(farben)):.3f}")
 
-# Beitraege zur Unsicherheit exemplarisch (gelbe Linie)
+# Beitraege zur Unsicherheit (gelbe Linie)
 print('\nFehlerbeitraege zu n (gelb):')
 for var, beitrag in Erg['gelb']['n'].error_components().items():
     print(f'   {var.tag:18s}: {beitrag:.2e}')
 
-# ---------------------------------------------------------------------------
-# Anpassung: vereinfachte Sellmeier-Formel = Cauchy-Formel
-# lambda in Mikrometer -> gut konditionierte Parameter
-# ---------------------------------------------------------------------------
 lam_um = lam_arr / 1000
 
-
-def cauchy3(lam, c0, c2, c4):
+def quadrat(lam, c0, c2, c4):
     return c0 + c2 / lam**2 + c4 / lam**4
 
-
-def cauchy2(lam, c0, c2):
+def linear(lam, c0, c2):
     return c0 + c2 / lam**2
-
 
 def anpassung(func, p0):
     popt, pcov = curve_fit(func, lam_um, n_nom, sigma=n_err, absolute_sigma=True, p0=p0)
@@ -215,8 +196,8 @@ def anpassung(func, p0):
     return popt, pcov, res, chi2, ndof
 
 
-popt3, pcov3, res3, chi2_3, ndof3 = anpassung(cauchy3, [1.6, 0.01, 0.0])
-popt2, pcov2, res2, chi2_2, ndof2 = anpassung(cauchy2, [1.6, 0.01])
+popt3, pcov3, res3, chi2_3, ndof3 = anpassung(quadrat, [1.6, 0.01, 0.0])
+popt2, pcov2, res2, chi2_2, ndof2 = anpassung(linear, [1.6, 0.01])
 par3 = un.correlated_values(popt3, pcov3)
 par2 = un.correlated_values(popt2, pcov2)
 
@@ -256,37 +237,33 @@ ax.errorbar(
     )
 ax.plot(
     lam_fein * 1000,
-    cauchy3(lam_fein, *popt3),
+    quadrat(lam_fein, *popt3),
     color='tab:blue', lw=2,
-    label=f'Cauchy-Fit $c_0+c_2/\\lambda^2+c_4/\\lambda^4$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_3:.1f}/{ndof3}'
+    label=f'Quadratischer Fit $c_0+c_2/\\lambda^2+c_4/\\lambda^4$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_3/ndof3:.3f}'
     )
 ax.plot(
     lam_fein * 1000,
-    cauchy2(lam_fein, *popt2),
+    linear(lam_fein, *popt2),
     color='tab:orange',
     lw=1.5,
     ls='--',
-    label=f'Cauchy-Fit $c_0+c_2/\\lambda^2$, $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_2:.1f}/{ndof2}'
+    label=f'Linearer Fit           $c_0+c_2/\\lambda^2$,            $\\chi^2/n_\\mathrm{{dof}}$ = {chi2_2/ndof2:.3f}'
     )
 ax.set_ylabel('Brechungsindex $n$')
 ax.set_title('Dispersionskurve $n(\\lambda)$ des Prismas')
 ax.grid(alpha=0.3)
 ax.legend()
 
-rs.errorbar(lam_arr, res3, yerr=n_err, fmt='o', capsize=3, color='tab:blue', label='3-Parameter-Fit')
-rs.errorbar(lam_arr + 3, res2, yerr=n_err, fmt='s', capsize=3, color='tab:orange', mfc='none', label='2-Parameter-Fit (um +3 nm versetzt)')
+rs.errorbar(lam_arr, res3, yerr=n_err, fmt='o', capsize=3, color='tab:blue', label='Quadratischer Fit')
+rs.errorbar(lam_arr + 3, res2, yerr=n_err, fmt='s', capsize=3, color='tab:orange', mfc='none', label='Linearer Fit (um +3 nm versetzt)')
 rs.axhline(0, color='grey', lw=1)
 rs.set_xlabel('Wellenlänge $\\lambda$ [nm]')
-rs.set_ylabel('$n - n_\\mathrm{fit}$')
+rs.set_ylabel('Rsiduen')
 rs.grid(alpha=0.3)
 rs.legend(fontsize=8)
 fig.savefig(OUTPUT / 'Dispersionskurve.png', dpi=200)
 plt.close(fig)
 
-
-# ---------------------------------------------------------------------------
-# Vergleich mit Herstellerangaben (SCHOTT-Sellmeier-Koeffizienten, lambda in um)
-# ---------------------------------------------------------------------------
 
 n_F2_kat = np.array(n_schott_f2(lam_um))
 n_nsf10_kat = np.array(n_schott_nsf10(lam_um))
@@ -320,8 +297,7 @@ def n_von_eps(delta_deg, eps_deg):
     return np.sin(np.deg2rad(delta_deg + eps_deg) / 2) / np.sin(np.deg2rad(eps_deg) / 2)
 
 
-popt_eps, pcov_eps = curve_fit(lambda d, e: n_von_eps(d, e), delta_nom, n_F2_kat, p0=[60.0],
-                               sigma=n_err, absolute_sigma=True)
+popt_eps, pcov_eps = curve_fit(lambda d, e: n_von_eps(d, e), delta_nom, n_F2_kat, p0=[60.0], sigma=n_err, absolute_sigma=True)
 eps_fit = un.ufloat(popt_eps[0], np.sqrt(pcov_eps[0, 0]))
 chi2_eps = np.sum(((n_von_eps(delta_nom, popt_eps[0]) - n_F2_kat) / n_err)**2)
 print(f"epsilon, das Messung und F2 zur Deckung bringt: {eps_fit} deg "
@@ -366,7 +342,7 @@ ax.legend()
 
 rs.errorbar(lam_arr, n_nom - n_F2_kat, yerr=n_err, fmt='o', capsize=3, color='black', label='$n_\\mathrm{mess}-n_\\mathrm{F2}$')
 rs.plot(lam_fein * 1000,
-        cauchy3(lam_fein, *popt3) - n_schott_f2(lam_fein),
+        quadrat(lam_fein, *popt3) - n_schott_f2(lam_fein),
         color='tab:blue',
         label='Cauchy-Fit $-$ F2 (Literaturwert)'
         )
@@ -378,26 +354,22 @@ fig.savefig(OUTPUT / 'Vergleich_Hersteller.png', dpi=200)
 plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
-# Aufgabe 3: Aufloesungsvermoegen an der gelben Hg-Doppellinie
-# ---------------------------------------------------------------------------
-lam1, lam2 = 576.96, 579.07                 # nm
+
+lam1, lam2 = 576.96, 579.07
 lam_m = (lam1 + lam2) / 2
 dlam = lam2 - lam1
 A_noetig = lam_m / dlam                      
 
-# Dispersion dn/dlambda bei lam_m aus dem Fit (korrelierte Parameter!)
 c0, c2, c4 = par3
 lam_m_um = lam_m / 1000
-dn_dlam = (-2 * c2 / lam_m_um**3 - 4 * c4 / lam_m_um**5) / 1000   # in 1/nm
+dn_dlam = (-2 * c2 / lam_m_um**3 - 4 * c4 / lam_m_um**5) / 1000
 dn_dlam_2 = (-2 * par2[1] / lam_m_um**3) / 1000
 
-# Minimalablenkung der gelben Linie (Messung)
+
 delta_gelb = Erg['gelb']['delta']
 cos_term = umath.cos((umath.radians(delta_gelb) + EPS_RAD) / 2)
-geo = 2 * np.sin(EPS_RAD / 2) / cos_term            # A = dn/dlam * d * geo  (Glg. 6.14)
+geo = 2 * np.sin(EPS_RAD / 2) / cos_term
 
-# Bei welcher Buendelbreite d wird die Doppellinie gerade noch aufgeloest?
 d_grenz_erwartet_nm = A_noetig / (-dn_dlam * geo)
 print('\n=== Aufloesungsvermoegen ===')
 print(f'lambda/dlambda (benoetigt) = {A_noetig:.1f}')
@@ -406,7 +378,7 @@ print(f'dn/dlambda bei {lam_m:.2f} nm: 3-Par-Fit = {dn_dlam * 1e5:.3f}e-5 /nm, '
 print(f'delta_min(gelb) = {delta_gelb:.4f} °,  2 sin(eps/2)/cos((delta+eps)/2) = {geo:.4f}')
 print(f'erwartete Grenz-Buendelbreite d = {d_grenz_erwartet_nm / 1e6:.3f} mm')
 
-# Aufloesungsvermoegen pro mm Buendelbreite
+
 A_pro_mm = -dn_dlam * geo * 1e6
 print(f'A(d) = {A_pro_mm:.1f} * d/mm')
 
