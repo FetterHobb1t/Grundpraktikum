@@ -280,7 +280,7 @@ print('\nLinie        n_mess               n_F2       Abw.     Abw./sigma')
 for f, nm, ne, nk in zip(farben, n_nom, n_err, n_F2_kat):
     print(f'{f:11s} {nm:.5f}+/-{ne:.5f}  {nk:.5f}  {nm - nk:+.5f}  {(nm - nk) / ne:+.2f}')
 
-# gemeinsamer Offset zu F2 (1 Parameter) als Test auf systematische Verschiebung
+# gemeinsamer Offset zu F2 als Test auf systematische Verschiebung
 w = 1 / n_err**2
 offset = np.sum(w * (n_nom - n_F2_kat)) / np.sum(w)
 offset_err = 1 / np.sqrt(np.sum(w))
@@ -288,7 +288,6 @@ chi2_off = np.sum(((n_nom - n_F2_kat - offset) / n_err)**2)
 print(f'Konstanter Offset zu F2: {offset:+.5f} +/- {offset_err:.5f},  '
       f'chi2 nach Offset = {chi2_off:.1f}/{len(lam_um) - 1}')
 
-# Kann der Offset durch einen brechenden Winkel != 60 deg erklaert werden?
 # Fit von epsilon so, dass die gemessenen delta_min zur F2-Kurve passen.
 delta_nom = np.array([Erg[f]['delta'].nominal_value for f in farben])
 
@@ -392,7 +391,6 @@ for var, beitrag in A_exp.error_components().items():
     if beitrag > 0.05:
         print(f'   Beitrag {var.tag}: {beitrag:.2f}')
 
-# Plot A(d) mit Erwartung
 fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
 d_ax = np.linspace(0, 6, 200)
 A_nom = A_pro_mm.nominal_value * d_ax
